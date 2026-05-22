@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHUEGUK 어휘 3회</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%);
+    min-height: 100vh;
+    padding: 14px;
+    padding-bottom: 100px;
+    color: #1f3a32;
+    -webkit-text-size-adjust: 100%;
+}
+
+.container { max-width: 580px; margin: 0 auto; }
+
+.header {
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 18px 16px 14px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(45, 128, 104, 0.08);
+    border: 2px solid #c8e4d8;
+}
+.header .logo {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: #5fb8a8;
+    margin-bottom: 6px;
+}
+.header h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 21px;
+    font-weight: 800;
+    color: #1f5a48;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+}
+.header .round {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #2d8068;
+    background: #d4ede2;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+.tab-radio { display: none; }
+.mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.mode-label {
+    padding: 12px;
+    background: white;
+    border: 2px solid #c8e4d8;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#tab-study-radio:checked ~ .container .mode-label[for="tab-study-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-study-radio:checked ~ .container .test-section { display: none; }
+#tab-study-radio:checked ~ .container .study-section { display: block; }
+#tab-test-radio:checked ~ .container .mode-label[for="tab-test-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-test-radio:checked ~ .container .study-section { display: none; }
+#tab-test-radio:checked ~ .container .test-section { display: block; }
+#tab-test-radio:checked ~ .submit-bar { display: block; }
+
+.cat-radio { display: none; }
+.category-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.cat-label {
+    padding: 10px 4px;
+    background: white;
+    border: 1.5px solid #d6e7e0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a7a70;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#cat-vocab-radio:checked ~ .container .cat-label[for="cat-vocab-radio"],
+#cat-concept-radio:checked ~ .container .cat-label[for="cat-concept-radio"],
+#cat-idiom-radio:checked ~ .container .cat-label[for="cat-idiom-radio"] {
+    background: #e9f5ef; border-color: #5fb8a8; color: #1f5a48;
+}
+.cat-content { display: none; }
+#cat-vocab-radio:checked ~ .container .cat-vocab { display: block; }
+#cat-concept-radio:checked ~ .container .cat-concept { display: block; }
+#cat-idiom-radio:checked ~ .container .cat-idiom { display: block; }
+
+.vocab-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px 18px;
+    border: 2px solid #ecf5f0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(45, 128, 104, 0.04);
+}
+.vocab-word {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1f3a32;
+    text-align: center;
+    margin-bottom: 6px;
+}
+.vocab-hanja {
+    text-align: center;
+    font-size: 13px;
+    color: #2d8068;
+    margin-bottom: 14px;
+    font-family: 'Nanum Myeongjo', serif;
+}
+.vocab-meaning {
+    font-size: 13px;
+    line-height: 1.7;
+    background: #e9f5ef;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border-left: 3px solid #5fb8a8;
+    margin-bottom: 10px;
+}
+.vocab-meaning .sub {
+    display: block;
+    font-size: 11px;
+    color: #5a7a70;
+    margin-top: 4px;
+}
+.vocab-example {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #5a7a70;
+    padding: 9px 12px;
+    background: #f4faf7;
+    border-radius: 8px;
+    font-style: italic;
+}
+.vocab-example b {
+    font-style: normal;
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+
+.test-section { display: none; }
+.study-section { display: block; }
+
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid #c8e4d8;
+}
+.progress-bar .filled { color: #2d8068; font-weight: 800; }
+.progress-bar .lbl { color: #5a7a70; }
+
+.q-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 2px solid #ecf5f0;
+}
+.q-card.correct { border-color: #5fbb8a; background: #dcf5e8; }
+.q-card.wrong { border-color: #f08a8a; background: #fde8e8; }
+.q-num {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+.section-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1f5a48;
+    background: #d4ede2;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 14px 0 8px;
+}
+.q-stem {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+.q-stem .underline {
+    text-decoration: underline;
+    text-decoration-color: #2d8068;
+    text-underline-offset: 3px;
+    font-weight: 700;
+}
+.q-stem .poem {
+    display: block;
+    background: #f4faf7;
+    padding: 8px 11px;
+    border-radius: 8px;
+    margin: 6px 0;
+    font-style: italic;
+    color: #1f5a48;
+    font-size: 12px;
+    line-height: 1.7;
+}
+.q-stem .poem-author {
+    display: block;
+    text-align: right;
+    font-size: 11px;
+    color: #5a7a70;
+    margin-top: 2px;
+    font-style: normal;
+}
+.answer-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 700;
+    border: 2px solid #d6e7e0;
+    border-radius: 9px;
+    outline: none;
+    color: #1f3a32;
+    -webkit-appearance: none;
+    background: white;
+}
+.answer-input:focus { border-color: #5fb8a8; }
+
+.boxki {
+    background: #e9f5ef;
+    border: 1.5px dashed #5fb8a8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    font-size: 12px;
+    color: #1f5a48;
+}
+.boxki b { display: block; margin-bottom: 4px; font-size: 11px; }
+.boxki-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    line-height: 1.6;
+}
+.boxki-item {
+    padding: 4px 0;
+}
+.boxki-item .marker {
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+.boxki-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.boxki-word {
+    background: white;
+    border: 1.5px solid #5fb8a8;
+    color: #1f5a48;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.feedback {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct {
+    background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a;
+}
+.feedback.wrong {
+    background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a;
+}
+.feedback b { font-weight: 800; }
+
+.submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 2px solid #c8e4d8;
+    padding: 12px 14px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 14px rgba(45, 128, 104, 0.1);
+    z-index: 50;
+    display: none;
+}
+.submit-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.submit-status { flex: 1; font-size: 12px; font-weight: 700; color: #5a7a70; }
+.submit-status .num { color: #2d8068; font-weight: 800; font-size: 14px; }
+.submit-btn {
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.final {
+    display: none;
+    text-align: center;
+    background: white;
+    padding: 24px 18px;
+    border-radius: 20px;
+    border: 3px solid #5fb8a8;
+    margin: 12px 0;
+}
+.final.show { display: block; }
+.final .score-big {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 42px;
+    font-weight: 800;
+    color: #2d8068;
+}
+.final .total { font-size: 18px; color: #94a3b8; }
+.final .msg {
+    font-size: 13px;
+    color: #5a7a70;
+    margin: 8px 0 14px;
+    line-height: 1.6;
+}
+.send-btn {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+.send-btn.reset { background: white; color: #2d8068; border: 2px solid #2d8068; }
+.send-note {
+    font-size: 11px;
+    color: #5a7a70;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<input type="radio" name="mode" id="tab-study-radio" class="tab-radio" checked>
+<input type="radio" name="mode" id="tab-test-radio" class="tab-radio">
+
+<input type="radio" name="cat" id="cat-vocab-radio" class="cat-radio" checked>
+<input type="radio" name="cat" id="cat-concept-radio" class="cat-radio">
+<input type="radio" name="cat" id="cat-idiom-radio" class="cat-radio">
+
+<div class="container">
+    <div class="header">
+        <div class="logo">SHUEGUK</div>
+        <h1>어휘, 시작이 반이다.</h1>
+        <div class="round">3회 · 표현법과 그리움의 한자 성어</div>
+    </div>
+
+    <div class="mode-tabs">
+        <label class="mode-label" for="tab-study-radio">📚 학습 모드</label>
+        <label class="mode-label" for="tab-test-radio">✏️ 테스트 모드</label>
+    </div>
+
+    <!-- 학습 모드 -->
+    <div class="study-section">
+        <div class="category-tabs">
+            <label class="cat-label" for="cat-vocab-radio">필수 어휘</label>
+            <label class="cat-label" for="cat-concept-radio">필수 개념</label>
+            <label class="cat-label" for="cat-idiom-radio">한자성어</label>
+        </div>
+
+        <div class="cat-content cat-vocab">
+            <div class="vocab-card"><div class="vocab-word">거처</div><div class="vocab-hanja">居(살 거) 處(곳 처)</div><div class="vocab-meaning">일정하게 자리를 잡고 사는 일. 또는 그 장소.</div><div class="vocab-example"><b>예)</b>그는 직장 근처로 거처를 옮겼다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">다독이다</div><div class="vocab-hanja">(순우리말)</div><div class="vocab-meaning">남의 약한 점을 따뜻이 어루만져 감싸고 달래다.</div><div class="vocab-example"><b>예)</b>형이 동생을 다독여 줄 줄도 알아야지.</div></div>
+            <div class="vocab-card"><div class="vocab-word">문인</div><div class="vocab-hanja">文(글월 문) 人(사람 인)</div><div class="vocab-meaning">① 문필에 종사하는 사람.<span class="sub">② 문관의 관직에 있는 사람.</span></div><div class="vocab-example"><b>예)</b>그는 우리 시대 최고의 문인이다. / 조선 시대에는 문인이 무인보다 더 대우를 받았다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">생경하다</div><div class="vocab-hanja">生(날 생) 硬(굳을 경)</div><div class="vocab-meaning">익숙하지 않아 어색하다.</div><div class="vocab-example"><b>예)</b>낯선 세계의 풍경이 내게 생경한 느낌으로 다가왔다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">유용하다</div><div class="vocab-hanja">有(있을 유) 用(쓸 용)</div><div class="vocab-meaning">쓸모가 있다.</div><div class="vocab-example"><b>예)</b>도서 목록은 책을 찾는 데 아주 유용하다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">이변</div><div class="vocab-hanja">異(다를 이) 變(변할 변)</div><div class="vocab-meaning">예상하지 못한 사태나 괴상한 변고.</div><div class="vocab-example"><b>예)</b>이번 시험에서는 많은 이변이 일어났다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">청승맞다</div><div class="vocab-hanja">(순우리말)</div><div class="vocab-meaning">궁상스럽고 처량하여 보기에 몹시 언짢다.</div><div class="vocab-example"><b>예)</b>그는 홀로 청승맞게 빈집을 지키고 있다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">혹평</div><div class="vocab-hanja">酷(혹독할 혹) 評(품평 평)</div><div class="vocab-meaning">몹시 모질고 혹독하게 평가함.</div><div class="vocab-example"><b>예)</b>나는 그에게 혹평을 받고 눈물이 났다.</div></div>
+        </div>
+
+        <div class="cat-content cat-concept">
+            <div class="vocab-card"><div class="vocab-word">은유법</div><div class="vocab-hanja">隱(숨을 은) 喩(비유할 유) 法(법도 법)</div><div class="vocab-meaning">'A는 B이다.' 또는 'A의 B'의 형식으로 암시적으로 비유하는 표현 방법.</div><div class="vocab-example"><b>예)</b>교실은 온통 별밭이다. (오세영, 「별처럼 꽃처럼」) / 달은 / 마음의 숯돌 (함민복, 「달」)</div></div>
+            <div class="vocab-card"><div class="vocab-word">직유법</div><div class="vocab-hanja">直(곧을 직) 喩(비유할 유) 法(법도 법)</div><div class="vocab-meaning">비슷한 성질이나 모양을 가진 두 사물을 '같이', '처럼', '듯이'와 같은 연결어로 결합하여 직접 비유하는 표현 방법.</div><div class="vocab-example"><b>예)</b>구름에 달 가듯이 / 가는 나그네. (박목월, 「나그네」) / 꽃가루와 같이 부드러운 고양이의 털 (이장희, 「봄은 고양이로다」)</div></div>
+            <div class="vocab-card"><div class="vocab-word">의인법</div><div class="vocab-hanja">擬(비길 의) 人(사람 인) 法(법도 법)</div><div class="vocab-meaning">사람이 아닌 것을 사람에 빗대어 사람이 행동하는 것처럼 표현하는 방법.</div><div class="vocab-example"><b>예)</b>말갛게 씻은 얼굴 고운 해야 솟아라. (박두진, 「해」) / 해님이 웃는다 / 나 보고 웃는다. (윤동주, 「햇비」)</div></div>
+        </div>
+
+        <div class="cat-content cat-idiom">
+            <div class="vocab-card"><div class="vocab-word">오매불망</div><div class="vocab-hanja">寤(잠 깰 오) 寐(잠잘 매) 不(아닐 불) 忘(잊을 망)</div><div class="vocab-meaning">자나 깨나 잊지 못함.</div><div class="vocab-example"><b>예)</b>그렇게도 오매불망 그리워하던 그 사람을 만났다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">일일여삼추</div><div class="vocab-hanja">一(하나 일) 日(날 일) 如(같을 여) 三(석 삼) 秋(가을 추)</div><div class="vocab-meaning">하루가 삼 년 같다는 뜻으로, 몹시 애태우며 기다림을 이르는 말.</div><div class="vocab-example"><b>예)</b>그녀는 일일여삼추로 애타게 그를 기다렸다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">일편단심</div><div class="vocab-hanja">一(하나 일) 片(조각 편) 丹(붉을 단) 心(마음 심)</div><div class="vocab-meaning">한 조각의 붉은 마음이라는 뜻으로, 진심에서 우러나오는 변치 아니하는 마음을 이르는 말.</div><div class="vocab-example"><b>예)</b>신하들은 어린 임금을 일편단심으로 섬겼다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">학수고대</div><div class="vocab-hanja">鶴(학 학) 首(머리 수) 苦(쓸 고) 待(기다릴 대)</div><div class="vocab-meaning">학의 목처럼 목을 길게 빼고 간절히 기다림.</div><div class="vocab-example"><b>예)</b>그는 집에서 편지가 오기를 학수고대 바라고 있었다.</div></div>
+        </div>
+    </div>
+
+    <!-- 테스트 모드 -->
+    <div class="test-section">
+        <div class="progress-bar">
+            <span class="lbl">입력: <span class="filled" id="filled-count">0</span> / 15</span>
+            <span id="result-display"></span>
+        </div>
+
+        <div class="section-label">01~04 빈칸에 들어갈 어휘를 &lt;보기&gt;에서 찾아 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">거처</span><span class="boxki-word">문인</span><span class="boxki-word">이변</span><span class="boxki-word">혹평</span></div></div>
+
+        <div class="q-card" id="card-0"><div><span class="q-num">01</span></div><div class="q-stem">이 집은 난방이 되지 않아서 여름에만 ( )이(가) 가능하다.</div><input type="text" class="answer-input" id="input-0" data-answer="거처" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-0"></div></div>
+
+        <div class="q-card" id="card-1"><div><span class="q-num">02</span></div><div class="q-stem">그 지역에서 한여름에 눈이 내린 것은 역사상 유례가 없는 ( )이다.</div><input type="text" class="answer-input" id="input-1" data-answer="이변" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-1"></div></div>
+
+        <div class="q-card" id="card-2"><div><span class="q-num">03</span></div><div class="q-stem">나는 어렸을 적부터 글쓰기를 좋아해서 ( )이 되는 것이 꿈이었다.</div><input type="text" class="answer-input" id="input-2" data-answer="문인" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-2"></div></div>
+
+        <div class="q-card" id="card-3"><div><span class="q-num">04</span></div><div class="q-stem">전문가들은 그의 새 작품을 기대에 못 미치는 작품이라고 ( )하였다.</div><input type="text" class="answer-input" id="input-3" data-answer="혹평" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-3"></div></div>
+
+        <div class="section-label">05~08 다음 뜻에 해당하는 한자 성어를 &lt;보기&gt;에서 찾아 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">오매불망</span><span class="boxki-word">일일여삼추</span><span class="boxki-word">일편단심</span><span class="boxki-word">학수고대</span></div></div>
+
+        <div class="q-card" id="card-4"><div><span class="q-num">05</span></div><div class="q-stem">자나 깨나 잊지 못함.</div><input type="text" class="answer-input" id="input-4" data-answer="오매불망" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-4"></div></div>
+
+        <div class="q-card" id="card-5"><div><span class="q-num">06</span></div><div class="q-stem">학의 목처럼 목을 길게 빼고 간절히 기다림.</div><input type="text" class="answer-input" id="input-5" data-answer="학수고대" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-5"></div></div>
+
+        <div class="q-card" id="card-6"><div><span class="q-num">07</span></div><div class="q-stem">진심에서 우러나오는 변치 아니하는 마음을 이르는 말.</div><input type="text" class="answer-input" id="input-6" data-answer="일편단심" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-6"></div></div>
+
+        <div class="q-card" id="card-7"><div><span class="q-num">08</span></div><div class="q-stem">하루가 삼 년 같다는 뜻으로, 몹시 애태우며 기다림을 이르는 말.</div><input type="text" class="answer-input" id="input-7" data-answer="일일여삼추" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-7"></div></div>
+
+        <div class="section-label">09~12 다음 뜻에 해당하는 어휘를 &lt;보기&gt;의 글자를 조합하여 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">하</span><span class="boxki-word">독</span><span class="boxki-word">경</span><span class="boxki-word">용</span><span class="boxki-word">생</span><span class="boxki-word">승</span><span class="boxki-word">맞</span><span class="boxki-word">이</span><span class="boxki-word">청</span><span class="boxki-word">유</span><span class="boxki-word">다</span></div></div>
+
+        <div class="q-card" id="card-8"><div><span class="q-num">09</span></div><div class="q-stem">쓸모가 있다.</div><input type="text" class="answer-input" id="input-8" data-answer="유용하다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-8"></div></div>
+
+        <div class="q-card" id="card-9"><div><span class="q-num">10</span></div><div class="q-stem">익숙하지 않아 어색하다.</div><input type="text" class="answer-input" id="input-9" data-answer="생경하다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-9"></div></div>
+
+        <div class="q-card" id="card-10"><div><span class="q-num">11</span></div><div class="q-stem">궁상스럽고 처량하여 보기에 몹시 언짢다.</div><input type="text" class="answer-input" id="input-10" data-answer="청승맞다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-10"></div></div>
+
+        <div class="q-card" id="card-11"><div><span class="q-num">12</span></div><div class="q-stem">남의 약한 점을 따뜻이 어루만져 감싸고 달래다.</div><input type="text" class="answer-input" id="input-11" data-answer="다독이다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-11"></div></div>
+
+        <div class="section-label">13~15 다음 시구에 나타난 표현법을 &lt;보기&gt;에서 찾아 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">직유법</span><span class="boxki-word">은유법</span><span class="boxki-word">의인법</span></div></div>
+
+        <div class="q-card" id="card-12"><div><span class="q-num">13</span></div><div class="q-stem"><span class="poem">뒷문 밖에는 갈잎의 노래<span class="poem-author">- 김소월, 「엄마야 누나야」</span></span></div><input type="text" class="answer-input" id="input-12" data-answer="의인법" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-12"></div></div>
+
+        <div class="q-card" id="card-13"><div><span class="q-num">14</span></div><div class="q-stem"><span class="poem">살 껍질처럼 발에 달라붙어 떨어지지 않던 / 검정 양말을 벗고<span class="poem-author">- 김기택, 「맨발」</span></span></div><input type="text" class="answer-input" id="input-13" data-answer="직유법" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-13"></div></div>
+
+        <div class="q-card" id="card-14"><div><span class="q-num">15</span></div><div class="q-stem"><span class="poem">구름은 / 보랏빛 색지 위에 / 마구 칠한 한 다발 장미<span class="poem-author">- 김광균, 「데생」</span></span></div><input type="text" class="answer-input" id="input-14" data-answer="은유법" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-14"></div></div>
+
+        <div id="final" class="final"></div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-inner">
+        <div class="submit-status"><span class="num" id="bar-filled">0</span> / 15 입력</div>
+        <button type="button" class="submit-btn" id="submit-btn">전체 제출</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    /* ============ 구글 폼 설정 ============ */
+    var ROUND_NUMBER = 3;  // ★ 회차 번호
+    var FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfsoiboFeTsLfPUpBvKGfz1pXMUENPiWklTUopF5zFOINz95Q/viewform?usp=pp_url';
+    var FIELD = {
+        round:   'entry.1897863140',
+        score:   'entry.841387885',
+        details: 'entry.1972999501',
+        time:    'entry.1736197859'
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function normalize(s) { return (s || '').replace(/\s/g, '').trim(); }
+
+    var TOTAL = 15;
+    var submitted = false;
+
+    function updateProgress() {
+        var filled = 0;
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            if (inp && inp.value.trim()) filled++;
+        }
+        $('bar-filled').textContent = filled;
+        $('filled-count').textContent = filled;
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    function nowStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+             + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function submit() {
+        if (submitted) return;
+        submitted = true;
+        var score = 0;
+        var details = [];
+
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            var card = $('card-' + i);
+            var fb = $('feedback-' + i);
+            var userAns = normalize(inp.value);
+            var correctAns = normalize(inp.getAttribute('data-answer'));
+            var isCorrect = userAns && (userAns === correctAns);
+            var qNum = i + 1;
+
+            inp.disabled = true;
+            if (isCorrect) {
+                score++;
+                card.className = 'q-card correct';
+                fb.className = 'feedback show correct';
+                fb.innerHTML = '<b>✓ 정답</b> 잘했어요!';
+                details.push(qNum + '. ✓ ' + inp.value);
+            } else {
+                card.className = 'q-card wrong';
+                fb.className = 'feedback show wrong';
+                var userPart = inp.value.trim() ? '입력: <b>' + inp.value + '</b>　→　' : '<b>미입력</b>　→　';
+                fb.innerHTML = '<b>✗</b> ' + userPart + '정답: <b>' + inp.getAttribute('data-answer') + '</b>';
+                details.push(qNum + '. ✗ ' + (inp.value || '(미입력)') + ' → 정답: ' + inp.getAttribute('data-answer'));
+            }
+        }
+
+        var pct = Math.round((score / TOTAL) * 100);
+        var msg;
+        if (pct === 100) msg = '전부 정답! 3회 완전 정복입니다 🌿';
+        else if (pct >= 80) msg = '훌륭해요! 틀린 어휘만 다시 한 번 새겨봐요.';
+        else if (pct >= 60) msg = '잘 풀었어요. 오답을 중심으로 복습해 봐요.';
+        else if (pct >= 40) msg = '조금 더 외워볼까요? 학습 모드 카드부터 다시 보세요.';
+        else msg = '괜찮아요. 학습 모드로 돌아가 천천히 익혀봐요.';
+
+        var detailStr = details.join('\n');
+        var submitTime = nowStr();
+        var formUrl = FORM_BASE
+            + '&' + FIELD.round   + '=' + encodeURIComponent(ROUND_NUMBER)
+            + '&' + FIELD.score   + '=' + encodeURIComponent(score + ' / ' + TOTAL)
+            + '&' + FIELD.details + '=' + encodeURIComponent(detailStr)
+            + '&' + FIELD.time    + '=' + encodeURIComponent(submitTime);
+
+        var finalEl = $('final');
+        finalEl.innerHTML =
+            '<div><span class="score-big">' + score + '</span><span class="total"> / ' + TOTAL + '</span></div>' +
+            '<div class="msg">' + msg + '</div>' +
+            '<a href="' + formUrl + '" target="_blank" class="send-btn">📤 선생님께 결과 보내기</a>' +
+            '<br><button type="button" class="send-btn reset" onclick="location.reload()">처음부터 다시</button>' +
+            '<div class="send-note">위 버튼을 누르면 선생님께 자동 전송됩니다.<br>이름·학교·학년만 입력하고 [제출]을 눌러주세요.</div>';
+        finalEl.className = 'final show';
+
+        $('result-display').innerHTML = '<span class="filled">맞힌 개수: ' + score + ' / ' + TOTAL + '</span>';
+        document.querySelector('.submit-bar').style.display = 'none';
+
+        setTimeout(function() {
+            finalEl.scrollIntoView({ block: 'center' });
+        }, 300);
+    }
+
+    function attachListeners() {
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            if (inp) inp.addEventListener('input', updateProgress);
+        }
+        var btn = $('submit-btn');
+        if (btn) btn.addEventListener('click', submit);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachListeners);
+    } else {
+        attachListeners();
+    }
+})();
+</script>
+</body>
+</html>
