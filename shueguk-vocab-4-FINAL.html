@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHUEGUK 어휘 4회</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%);
+    min-height: 100vh;
+    padding: 14px;
+    padding-bottom: 100px;
+    color: #1f3a32;
+    -webkit-text-size-adjust: 100%;
+}
+
+.container { max-width: 580px; margin: 0 auto; }
+
+/* 헤더 */
+.header {
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 18px 16px 14px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(45, 128, 104, 0.08);
+    border: 2px solid #c8e4d8;
+}
+.header .logo {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: #5fb8a8;
+    margin-bottom: 6px;
+}
+.header h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 21px;
+    font-weight: 800;
+    color: #1f5a48;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+}
+.header .round {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #2d8068;
+    background: #d4ede2;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* 모드 라디오 트릭 */
+.tab-radio { display: none; }
+.mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.mode-label {
+    padding: 12px;
+    background: white;
+    border: 2px solid #c8e4d8;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#tab-study-radio:checked ~ .container .mode-label[for="tab-study-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-study-radio:checked ~ .container .test-section { display: none; }
+#tab-study-radio:checked ~ .container .study-section { display: block; }
+#tab-test-radio:checked ~ .container .mode-label[for="tab-test-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-test-radio:checked ~ .container .study-section { display: none; }
+#tab-test-radio:checked ~ .container .test-section { display: block; }
+#tab-test-radio:checked ~ .submit-bar { display: block; }
+
+/* 카테고리 라디오 트릭 */
+.cat-radio { display: none; }
+.category-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.cat-label {
+    padding: 10px 4px;
+    background: white;
+    border: 1.5px solid #d6e7e0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a7a70;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#cat-vocab-radio:checked ~ .container .cat-label[for="cat-vocab-radio"],
+#cat-concept-radio:checked ~ .container .cat-label[for="cat-concept-radio"],
+#cat-idiom-radio:checked ~ .container .cat-label[for="cat-idiom-radio"] {
+    background: #e9f5ef; border-color: #5fb8a8; color: #1f5a48;
+}
+.cat-content { display: none; }
+#cat-vocab-radio:checked ~ .container .cat-vocab { display: block; }
+#cat-concept-radio:checked ~ .container .cat-concept { display: block; }
+#cat-idiom-radio:checked ~ .container .cat-idiom { display: block; }
+
+/* 어휘 카드 */
+.vocab-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px 18px;
+    border: 2px solid #ecf5f0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(45, 128, 104, 0.04);
+}
+.vocab-word {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1f3a32;
+    text-align: center;
+    margin-bottom: 6px;
+}
+.vocab-hanja {
+    text-align: center;
+    font-size: 13px;
+    color: #2d8068;
+    margin-bottom: 14px;
+    font-family: 'Nanum Myeongjo', serif;
+}
+.vocab-meaning {
+    font-size: 13px;
+    line-height: 1.7;
+    background: #e9f5ef;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border-left: 3px solid #5fb8a8;
+    margin-bottom: 10px;
+}
+.vocab-meaning .sub {
+    display: block;
+    font-size: 12px;
+    color: #3a6b5a;
+    margin-top: 5px;
+}
+.vocab-example {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #5a7a70;
+    padding: 9px 12px;
+    background: #f4faf7;
+    border-radius: 8px;
+    font-style: italic;
+}
+.vocab-example b {
+    font-style: normal;
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+.vocab-example .ex-line { display: block; margin-top: 5px; }
+.vocab-example .ex-line:first-child { margin-top: 0; }
+
+.sijo-box {
+    font-size: 12px;
+    line-height: 1.8;
+    background: #f4faf7;
+    padding: 10px 13px;
+    border-radius: 8px;
+    color: #3a6b5a;
+    margin-bottom: 10px;
+}
+.sijo-box .sijo-title { font-weight: 800; color: #2d8068; display: block; margin-bottom: 4px; font-size: 12px; }
+
+/* 테스트 영역 */
+.test-section { display: none; }
+.study-section { display: block; }
+
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid #c8e4d8;
+}
+.progress-bar .filled { color: #2d8068; font-weight: 800; }
+.progress-bar .lbl { color: #5a7a70; }
+
+.q-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 2px solid #ecf5f0;
+}
+.q-card.correct { border-color: #5fbb8a; background: #dcf5e8; }
+.q-card.wrong { border-color: #f08a8a; background: #fde8e8; }
+.q-num {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+.section-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1f5a48;
+    background: #d4ede2;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 14px 0 8px;
+}
+.q-stem {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+.q-stem b { font-weight: 800; color: #1f5a48; }
+.chosung {
+    display: inline-block;
+    background: #e9f5ef;
+    border: 1.5px solid #5fb8a8;
+    color: #1f5a48;
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+    margin-right: 5px;
+}
+.blank {
+    display: inline-block;
+    min-width: 50px;
+    padding: 0 8px;
+    border-bottom: 2px solid #2d8068;
+    color: #2d8068;
+    font-weight: 800;
+    font-style: normal;
+}
+.answer-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 700;
+    border: 2px solid #d6e7e0;
+    border-radius: 9px;
+    outline: none;
+    color: #1f3a32;
+    -webkit-appearance: none;
+    background: white;
+}
+.answer-input:focus { border-color: #5fb8a8; }
+
+.boxki {
+    background: #e9f5ef;
+    border: 1.5px dashed #5fb8a8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    font-size: 12px;
+    color: #1f5a48;
+}
+.boxki b { display: block; margin-bottom: 4px; font-size: 11px; }
+.boxki-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    line-height: 1.6;
+}
+.boxki-item { padding: 4px 0; }
+.boxki-item .marker {
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+.boxki-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.boxki-word {
+    background: white;
+    border: 1.5px solid #5fb8a8;
+    color: #1f5a48;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.q-hint {
+    font-size: 11px;
+    color: #92760e;
+    background: #fff7e6;
+    border: 1px dashed #fbbf24;
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
+.ox-radio { display: none; }
+.ox-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+}
+.ox-label {
+    background: white;
+    border: 2px solid #d6e7e0;
+    padding: 14px;
+    border-radius: 9px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #5a7a70;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.q-card input[type="radio"]:checked + .ox-label {
+    background: #d4ede2; border-color: #2d8068; color: #1f5a48;
+}
+
+.feedback {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct {
+    background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a;
+}
+.feedback.wrong {
+    background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a;
+}
+.feedback b { font-weight: 800; }
+
+/* 하단 제출 바 */
+.submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 2px solid #c8e4d8;
+    padding: 12px 14px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 14px rgba(45, 128, 104, 0.1);
+    z-index: 50;
+    display: none;
+}
+.submit-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.submit-status { flex: 1; font-size: 12px; font-weight: 700; color: #5a7a70; }
+.submit-status .num { color: #2d8068; font-weight: 800; font-size: 14px; }
+.submit-btn {
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 최종 결과 */
+.final {
+    display: none;
+    text-align: center;
+    background: white;
+    padding: 24px 18px;
+    border-radius: 20px;
+    border: 3px solid #5fb8a8;
+    margin: 12px 0;
+}
+.final.show { display: block; }
+.final .score-big {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 42px;
+    font-weight: 800;
+    color: #2d8068;
+}
+.final .total { font-size: 18px; color: #94a3b8; }
+.final .msg {
+    font-size: 13px;
+    color: #5a7a70;
+    margin: 8px 0 14px;
+    line-height: 1.6;
+}
+.send-btn {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+.send-btn.reset { background: white; color: #2d8068; border: 2px solid #2d8068; }
+.send-note {
+    font-size: 11px;
+    color: #5a7a70;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- 모드 라디오 -->
+<input type="radio" name="mode" id="tab-study-radio" class="tab-radio" checked>
+<input type="radio" name="mode" id="tab-test-radio" class="tab-radio">
+
+<!-- 카테고리 라디오 -->
+<input type="radio" name="cat" id="cat-vocab-radio" class="cat-radio" checked>
+<input type="radio" name="cat" id="cat-concept-radio" class="cat-radio">
+<input type="radio" name="cat" id="cat-idiom-radio" class="cat-radio">
+
+<div class="container">
+    <div class="header">
+        <div class="logo">SHUEGUK</div>
+        <h1>어휘, 시작이 반이다.</h1>
+        <div class="round">4회 · 겸손의 속담과 시조</div>
+    </div>
+
+    <div class="mode-tabs">
+        <label class="mode-label" for="tab-study-radio">📚 학습 모드</label>
+        <label class="mode-label" for="tab-test-radio">✏️ 테스트 모드</label>
+    </div>
+
+    <!-- 학습 모드 -->
+    <div class="study-section">
+        <div class="category-tabs">
+            <label class="cat-label" for="cat-vocab-radio">필수 어휘</label>
+            <label class="cat-label" for="cat-concept-radio">필수 개념</label>
+            <label class="cat-label" for="cat-idiom-radio">속담</label>
+        </div>
+
+        <div class="cat-content cat-vocab">
+            <div class="vocab-card"><div class="vocab-word">까마득하다</div><div class="vocab-hanja">(순우리말)</div><div class="vocab-meaning">① 거리가 매우 멀어 보이는 것이나 들리는 것이 희미하다.<span class="sub">② 시간이 아주 오래되어 기억이 희미하다.</span></div><div class="vocab-example"><b>예)</b><span class="ex-line">절벽 끝에서 아래를 내려다보니 까마득했다.</span><span class="ex-line">모든 일이 이제는 까마득하게 지워진 과거일 뿐이다.</span></div></div>
+            <div class="vocab-card"><div class="vocab-word">노쇠하다</div><div class="vocab-hanja">老(늙을 노) 衰(쇠할 쇠)</div><div class="vocab-meaning">늙어서 쇠약하고 기운이 별로 없다.</div><div class="vocab-example"><b>예)</b>그 말은 너무 노쇠하여 경주마로 쓰지 못한다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">다분하다</div><div class="vocab-hanja">多(많을 다) 分(나눌 분)</div><div class="vocab-meaning">그 비율이 어느 정도 많다.</div><div class="vocab-example"><b>예)</b>동생은 낙천적인 성향이 다분하다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">무료</div><div class="vocab-hanja">無(없을 무) 聊(즐길 료)</div><div class="vocab-meaning">흥미 있는 일이 없어 심심하고 지루함.</div><div class="vocab-example"><b>예)</b>나는 무료를 달래 줄 재미있는 일을 찾았다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">미묘하다</div><div class="vocab-hanja">微(작을 미) 妙(묘할 묘)</div><div class="vocab-meaning">뚜렷하지 않고 야릇하고 묘하다.</div><div class="vocab-example"><b>예)</b>건물 안으로 들어서자 미묘한 긴장감이 감돌았다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">상기</div><div class="vocab-hanja">上(위 상) 氣(기운 기)</div><div class="vocab-meaning">흥분이나 부끄러움으로 얼굴이 붉어짐.</div><div class="vocab-example"><b>예)</b>동생의 볼이 살짝 상기가 되었다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">인기척</div><div class="vocab-hanja">(순우리말)</div><div class="vocab-meaning">사람이 있음을 알 수 있게 하는 소리나 기색.</div><div class="vocab-example"><b>예)</b>그는 갑작스러운 인기척에 놀랐다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">황폐하다</div><div class="vocab-hanja">荒(거칠 황) 廢(폐할 폐)</div><div class="vocab-meaning">① 집, 토지, 삼림 따위가 거칠어져 못 쓰게 되다.<span class="sub">② 정신이나 생활 따위가 거칠어지고 메말라 가다.</span></div><div class="vocab-example"><b>예)</b><span class="ex-line">그들은 황폐한 땅을 숲으로 가꾸기 시작하였다.</span><span class="ex-line">비속어의 사용은 우리의 정신을 황폐하게 만든다.</span></div></div>
+        </div>
+
+        <div class="cat-content cat-concept">
+            <div class="vocab-card"><div class="vocab-word">상징</div><div class="vocab-hanja">象(형상 상) 徵(부를 징)</div><div class="vocab-meaning">추상적인 것을 구체적인 사물로 나타내는 표현 방식.</div><div class="vocab-example"><b>예)</b>우리가 눈발이라면 / 허공에서 쭈빗쭈빗 흩날리는 / 진눈깨비는 되지 말자. (안도현, 「우리가 눈발이라면」) → '진눈깨비'는 '어려운 사람들을 더 힘들게 하는 부정적인 존재'를 상징함.</div></div>
+            <div class="vocab-card"><div class="vocab-word">시조</div><div class="vocab-hanja">時(때 시) 調(고를 조)</div><div class="vocab-meaning">고려 말기부터 발달하여 온 우리나라 고유의 정형시.</div><div class="sijo-box"><span class="sijo-title">▶ 시조의 기본 형식</span>• 일반적으로 3장(초장·중장·종장) 6구 45자 내외의 형태를 지님.<br>• 3글자 또는 4글자가 짝을 이룬 3·4조 또는 4·4조의 형식(음수율)을 지님.<br>• 각 장은 4개의 마디로 끊어 읽을 수 있는 4음보의 운율을 지님.<br>• 종장의 첫 음보는 3글자로 고정되어 있음.</div></div>
+        </div>
+
+        <div class="cat-content cat-idiom">
+            <div class="vocab-card"><div class="vocab-word">뛰는 놈 위에<br>나는 놈 있다</div><div class="vocab-hanja">속담</div><div class="vocab-meaning">아무리 재주가 뛰어나다 하더라도 그보다 더 뛰어난 사람이 있다는 뜻으로, 스스로 뽐내는 사람을 경계하여 이르는 말.</div><div class="vocab-example"><b>예)</b>뛰는 놈 위에 나는 놈 있다는 생각으로 자만심을 버려야 한다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">물이 깊어야<br>고기가 모인다</div><div class="vocab-hanja">속담</div><div class="vocab-meaning">자기에게 덕망이 있어야 사람들이 따르게 됨을 비유적으로 이르는 말.</div><div class="vocab-example"><b>예)</b>물이 깊어야 고기가 모인다고 평소 덕을 쌓고 올바른 삶을 살면 사람들이 너를 좋아하게 될 거야.</div></div>
+            <div class="vocab-card"><div class="vocab-word">물이 깊을수록<br>소리가 없다</div><div class="vocab-hanja">속담</div><div class="vocab-meaning">덕이 높고 생각이 깊은 사람은 겉으로 떠벌리고 잘난 체하거나 뽐내지 않는다는 말.</div><div class="vocab-example"><b>예)</b>물이 깊을수록 소리가 없듯 생각이 깊은 사람은 잘난 체하지 않는다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">벼 이삭은 익을수록<br>고개를 숙인다</div><div class="vocab-hanja">속담</div><div class="vocab-meaning">교양이 있고 수양을 쌓은 사람일수록 겸손하고 남 앞에서 자기를 내세우려 하지 않는다는 것을 비유적으로 이르는 말.</div><div class="vocab-example"><b>예)</b>벼 이삭은 익을수록 고개를 숙인다고 김 박사는 많은 업적을 쌓았으면서도 항상 겸손하다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">오르지 못할 나무는<br>쳐다보지도 마라</div><div class="vocab-hanja">속담</div><div class="vocab-meaning">자기의 능력 밖의 불가능한 일에 대해서는 처음부터 욕심을 내지 않는 것이 좋다는 말.</div><div class="vocab-example"><b>예)</b>그것은 네가 할 수 있는 일이 아니야. 속담에도 오르지 못할 나무는 쳐다보지도 말라고 하지 않았니?</div></div>
+        </div>
+    </div>
+
+    <!-- 테스트 모드 -->
+    <div class="test-section">
+        <div class="progress-bar">
+            <span class="lbl">입력: <span class="filled" id="filled-count">0</span> / 16</span>
+            <span id="result-display"></span>
+        </div>
+
+        <div class="section-label">01~05 다음 속담의 뜻을 &lt;보기&gt;에서 찾아 번호를 쓰시오. (예: 1, 2, 3, 4, 5)</div>
+
+        <div class="boxki">
+            <b>&lt;보기&gt;</b>
+            <div class="boxki-items">
+                <div class="boxki-item"><span class="marker">①</span>자기에게 덕망이 있어야 사람들이 따르게 됨을 비유적으로 이르는 말.</div>
+                <div class="boxki-item"><span class="marker">②</span>덕이 높고 생각이 깊은 사람은 겉으로 떠벌리고 잘난 체하거나 뽐내지 않는다는 말.</div>
+                <div class="boxki-item"><span class="marker">③</span>자기의 능력 밖의 불가능한 일에 대해서는 처음부터 욕심을 내지 않는 것이 좋다는 말.</div>
+                <div class="boxki-item"><span class="marker">④</span>교양이 있고 수양을 쌓은 사람일수록 겸손하고 남 앞에서 자기를 내세우려 하지 않는다는 것을 비유적으로 이르는 말.</div>
+                <div class="boxki-item"><span class="marker">⑤</span>아무리 재주가 뛰어나다 하더라도 그보다 더 뛰어난 사람이 있다는 뜻으로, 스스로 뽐내는 사람을 경계하여 이르는 말.</div>
+            </div>
+        </div>
+
+        <div class="q-card" id="card-0"><div><span class="q-num">01</span></div><div class="q-stem">물이 깊을수록 소리가 없다</div><input type="text" class="answer-input" id="input-0" data-answer="2" placeholder="번호를 입력하세요 (1~5)" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="numeric"><div class="feedback" id="feedback-0"></div></div>
+
+        <div class="q-card" id="card-1"><div><span class="q-num">02</span></div><div class="q-stem">물이 깊어야 고기가 모인다</div><input type="text" class="answer-input" id="input-1" data-answer="1" placeholder="번호를 입력하세요 (1~5)" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="numeric"><div class="feedback" id="feedback-1"></div></div>
+
+        <div class="q-card" id="card-2"><div><span class="q-num">03</span></div><div class="q-stem">뛰는 놈 위에 나는 놈 있다</div><input type="text" class="answer-input" id="input-2" data-answer="5" placeholder="번호를 입력하세요 (1~5)" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="numeric"><div class="feedback" id="feedback-2"></div></div>
+
+        <div class="q-card" id="card-3"><div><span class="q-num">04</span></div><div class="q-stem">벼 이삭은 익을수록 고개를 숙인다</div><input type="text" class="answer-input" id="input-3" data-answer="4" placeholder="번호를 입력하세요 (1~5)" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="numeric"><div class="feedback" id="feedback-3"></div></div>
+
+        <div class="q-card" id="card-4"><div><span class="q-num">05</span></div><div class="q-stem">오르지 못할 나무는 쳐다보지도 마라</div><input type="text" class="answer-input" id="input-4" data-answer="3" placeholder="번호를 입력하세요 (1~5)" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="numeric"><div class="feedback" id="feedback-4"></div></div>
+
+        <div class="section-label">06~08 빈칸에 들어갈 어휘를 &lt;보기&gt;에서 찾아 문맥에 맞게 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">까마득하다</span><span class="boxki-word">노쇠하다</span><span class="boxki-word">황폐하다</span></div></div>
+
+        <div class="q-card" id="card-5"><div><span class="q-num">06</span></div><div class="q-stem">수평선 저 끝으로 작은 섬이 ( ) 보였다.</div><input type="text" class="answer-input" id="input-5" data-answer="까마득하게" placeholder="문맥에 맞게 변형해 입력" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-5"></div></div>
+
+        <div class="q-card" id="card-6"><div><span class="q-num">07</span></div><div class="q-stem">따뜻한 말 한마디가 ( ) 사람의 마음에 감동을 불러일으킬 수 있다.</div><input type="text" class="answer-input" id="input-6" data-answer="황폐한" placeholder="문맥에 맞게 변형해 입력" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-6"></div></div>
+
+        <div class="q-card" id="card-7"><div><span class="q-num">08</span></div><div class="q-stem">할아버지께서는 ( ) 몸을 이끌고 친구 분을 만나러 읍내까지 외출하셨다.</div><input type="text" class="answer-input" id="input-7" data-answer="노쇠한" placeholder="문맥에 맞게 변형해 입력" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-7"></div></div>
+
+        <div class="section-label">09~11 빈칸에 알맞은 말을 넣어 밑줄 친 어휘의 뜻을 완성하시오.</div>
+
+        <div class="q-card" id="card-8"><div><span class="q-num">09</span></div><div class="q-stem">허풍쟁이인 그의 말에는 과장기가 <b>다분하다</b>.<br>→ 그 비율이 어느 정도 ( ).</div><input type="text" class="answer-input" id="input-8" data-answer="많다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-8"></div></div>
+
+        <div class="q-card" id="card-9"><div><span class="q-num">10</span></div><div class="q-stem">친하면서도 라이벌인 두 사람의 관계는 참으로 <b>미묘하다</b>.<br>→ 뚜렷하지 않고 야릇하고 ( ).</div><input type="text" class="answer-input" id="input-9" data-answer="묘하다" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-9"></div></div>
+
+        <div class="q-card" id="card-10"><div><span class="q-num">11</span></div><div class="q-stem">그녀는 황급히 오느라고 얼굴이 몹시 <b>상기</b>되어 있었다.<br>→ 흥분이나 부끄러움으로 얼굴이 ( ).</div><input type="text" class="answer-input" id="input-10" data-answer="붉어짐" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-10"></div></div>
+
+        <div class="section-label">12~13 제시된 초성을 참고하여 다음 뜻에 해당하는 어휘를 쓰시오.</div>
+
+        <div class="q-card" id="card-11"><div><span class="q-num">12</span><span class="chosung">ㅁㄹ</span></div><div class="q-stem">흥미 있는 일이 없어 심심하고 지루함.</div><input type="text" class="answer-input" id="input-11" data-answer="무료" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-11"></div></div>
+
+        <div class="q-card" id="card-12"><div><span class="q-num">13</span><span class="chosung">ㅇㄱㅊ</span></div><div class="q-stem">사람이 있음을 알 수 있게 하는 소리나 기색.</div><input type="text" class="answer-input" id="input-12" data-answer="인기척" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-12"></div></div>
+
+        <div class="section-label">14~16 다음 설명이 맞으면 O, 그렇지 않으면 X를 누르시오.</div>
+
+        <div class="q-card" id="card-13"><div><span class="q-num">14</span></div><div class="q-stem">상징은 구체적인 것을 추상적인 사물로 표현하는 방식이다.</div><div class="ox-buttons"><input type="radio" name="ox-13" id="ox-13-O" class="ox-radio"><label for="ox-13-O" class="ox-label">O</label><input type="radio" name="ox-13" id="ox-13-X" class="ox-radio"><label for="ox-13-X" class="ox-label">X</label></div><div class="feedback" id="feedback-13" data-answer="X" data-explanation="방향이 반대입니다. 상징은 '추상적인 것'을 '구체적인 사물'로 나타내는 표현 방식이에요."></div></div>
+
+        <div class="q-card" id="card-14"><div><span class="q-num">15</span></div><div class="q-stem">상징은 원관념은 드러나지 않고 보조 관념만 드러나므로 다양한 의미로 해석될 수 있다.</div><div class="ox-buttons"><input type="radio" name="ox-14" id="ox-14-O" class="ox-radio"><label for="ox-14-O" class="ox-label">O</label><input type="radio" name="ox-14" id="ox-14-X" class="ox-radio"><label for="ox-14-X" class="ox-label">X</label></div><div class="feedback" id="feedback-14" data-answer="O" data-explanation="맞습니다. 상징은 원관념이 겉으로 드러나지 않고 보조 관념만 제시되기 때문에, 그 의미를 다양하게 해석할 수 있습니다."></div></div>
+
+        <div class="q-card" id="card-15"><div><span class="q-num">16</span></div><div class="q-stem">시조는 고려 말기부터 발달해 온 우리나라 고유의 자유시이다.</div><div class="ox-buttons"><input type="radio" name="ox-15" id="ox-15-O" class="ox-radio"><label for="ox-15-O" class="ox-label">O</label><input type="radio" name="ox-15" id="ox-15-X" class="ox-radio"><label for="ox-15-X" class="ox-label">X</label></div><div class="feedback" id="feedback-15" data-answer="X" data-explanation="시조는 '자유시'가 아니라 '정형시'입니다. 3장 6구 45자 내외, 4음보 등 정해진 형식을 따릅니다."></div></div>
+
+        <div id="final" class="final"></div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-inner">
+        <div class="submit-status"><span class="num" id="bar-filled">0</span> / 16 입력</div>
+        <button type="button" class="submit-btn" id="submit-btn">전체 제출</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    /* ============ 구글 폼 설정 — 회차/항목 ID ============ */
+    var ROUND_NUMBER = 4;  // 회차 번호 (회차가 바뀌면 이 숫자만 수정)
+    var FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfsoiboFeTsLfPUpBvKGfz1pXMUENPiWklTUopF5zFOINz95Q/viewform?usp=pp_url';
+    var FIELD = {
+        round:   'entry.1897863140',   // 회차
+        score:   'entry.841387885',    // 점수
+        details: 'entry.1972999501',   // 문항별 결과
+        time:    'entry.1736197859'    // 제출 시각
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function normalize(s) {
+        // 공백 제거 + 한자 번호(①②③④⑤)를 일반 숫자로 변환
+        return (s || '').replace(/\s/g, '').trim()
+            .replace(/①/g, '1').replace(/②/g, '2').replace(/③/g, '3')
+            .replace(/④/g, '4').replace(/⑤/g, '5');
+    }
+
+    var TOTAL = 16;
+    var submitted = false;
+
+    function updateProgress() {
+        var filled = 0;
+        for (var i = 0; i < 13; i++) {
+            var inp = $('input-' + i);
+            if (inp && inp.value.trim()) filled++;
+        }
+        for (var j = 13; j <= 15; j++) {
+            var radios = document.getElementsByName('ox-' + j);
+            for (var k = 0; k < radios.length; k++) {
+                if (radios[k].checked) { filled++; break; }
+            }
+        }
+        $('bar-filled').textContent = filled;
+        $('filled-count').textContent = filled;
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    function nowStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+             + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function submit() {
+        if (submitted) return;
+        submitted = true;
+        var score = 0;
+        var details = [];
+
+        // 단답형 채점 (0~12)
+        for (var i = 0; i < 13; i++) {
+            var inp = $('input-' + i);
+            var card = $('card-' + i);
+            var fb = $('feedback-' + i);
+            var rawAnswer = inp.getAttribute('data-answer');
+            var userAns = normalize(inp.value);
+            var correctAns = normalize(rawAnswer);
+            var isCorrect = userAns && (userAns === correctAns);
+            var qNum = i + 1;
+
+            inp.disabled = true;
+            if (isCorrect) {
+                score++;
+                card.className = 'q-card correct';
+                fb.className = 'feedback show correct';
+                fb.innerHTML = '<b>✓ 정답</b> 잘했어요!';
+                details.push(qNum + '. ✓ ' + inp.value);
+            } else {
+                card.className = 'q-card wrong';
+                fb.className = 'feedback show wrong';
+                var userPart = inp.value.trim() ? '입력: <b>' + inp.value + '</b>　→　' : '<b>미입력</b>　→　';
+                fb.innerHTML = '<b>✗</b> ' + userPart + '정답: <b>' + rawAnswer + '</b>';
+                details.push(qNum + '. ✗ ' + (inp.value || '(미입력)') + ' → 정답: ' + rawAnswer);
+            }
+        }
+
+        // OX 채점 (13~15)
+        for (var j = 13; j <= 15; j++) {
+            var card = $('card-' + j);
+            var fb = $('feedback-' + j);
+            var correctAns = fb.getAttribute('data-answer');
+            var explanation = fb.getAttribute('data-explanation');
+            var qNum = j + 1;
+
+            var radios = document.getElementsByName('ox-' + j);
+            var userChoice = null;
+            for (var k = 0; k < radios.length; k++) {
+                if (radios[k].checked) {
+                    userChoice = radios[k].id.indexOf('-O') >= 0 ? 'O' : 'X';
+                }
+                radios[k].disabled = true;
+            }
+
+            var isCorrect = (userChoice === correctAns);
+            if (isCorrect) {
+                score++;
+                card.className = 'q-card correct';
+                fb.className = 'feedback show correct';
+                details.push(qNum + '. ✓ ' + userChoice);
+            } else {
+                card.className = 'q-card wrong';
+                fb.className = 'feedback show wrong';
+                details.push(qNum + '. ✗ ' + (userChoice || '(미선택)') + ' → 정답: ' + correctAns);
+            }
+            fb.innerHTML = '<b>' + (isCorrect ? '✓' : '✗') + ' 정답 ' + correctAns + '</b> ' + explanation;
+        }
+
+        // 최종 결과
+        var pct = Math.round((score / TOTAL) * 100);
+        var msg;
+        if (pct === 100) msg = '전부 정답! 4회 완전 정복입니다 🌿';
+        else if (pct >= 80) msg = '훌륭해요! 틀린 어휘만 다시 한 번 새겨봐요.';
+        else if (pct >= 60) msg = '잘 풀었어요. 오답을 중심으로 복습해 봐요.';
+        else if (pct >= 40) msg = '조금 더 외워볼까요? 학습 모드 카드부터 다시 보세요.';
+        else msg = '괜찮아요. 학습 모드로 돌아가 천천히 익혀봐요.';
+
+        // 구글 폼 자동 채움 URL 생성
+        var detailStr = details.join('\n');
+        var submitTime = nowStr();
+        var formUrl = FORM_BASE
+            + '&' + FIELD.round   + '=' + encodeURIComponent(ROUND_NUMBER)
+            + '&' + FIELD.score   + '=' + encodeURIComponent(score + ' / ' + TOTAL)
+            + '&' + FIELD.details + '=' + encodeURIComponent(detailStr)
+            + '&' + FIELD.time    + '=' + encodeURIComponent(submitTime);
+
+        var finalEl = $('final');
+        finalEl.innerHTML =
+            '<div><span class="score-big">' + score + '</span><span class="total"> / ' + TOTAL + '</span></div>' +
+            '<div class="msg">' + msg + '</div>' +
+            '<a href="' + formUrl + '" target="_blank" class="send-btn">📤 선생님께 결과 보내기</a>' +
+            '<br><button type="button" class="send-btn reset" onclick="location.reload()">처음부터 다시</button>' +
+            '<div class="send-note">위 버튼을 누르면 선생님께 자동 전송됩니다.<br>이름·학교·학년만 입력하고 [제출]을 눌러주세요.</div>';
+        finalEl.className = 'final show';
+
+        $('result-display').innerHTML = '<span class="filled">맞힌 개수: ' + score + ' / ' + TOTAL + '</span>';
+        document.querySelector('.submit-bar').style.display = 'none';
+
+        setTimeout(function() {
+            finalEl.scrollIntoView({ block: 'center' });
+        }, 300);
+    }
+
+    function attachListeners() {
+        for (var i = 0; i < 13; i++) {
+            var inp = $('input-' + i);
+            if (inp) inp.addEventListener('input', updateProgress);
+        }
+        for (var j = 13; j <= 15; j++) {
+            var radios = document.getElementsByName('ox-' + j);
+            for (var k = 0; k < radios.length; k++) {
+                radios[k].addEventListener('change', updateProgress);
+            }
+        }
+        var btn = $('submit-btn');
+        if (btn) btn.addEventListener('click', submit);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachListeners);
+    } else {
+        attachListeners();
+    }
+})();
+</script>
+</body>
+</html>
