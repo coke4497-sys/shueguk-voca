@@ -407,6 +407,69 @@ body {
     margin-top: 10px;
     line-height: 1.5;
 }
+
+/* 학생 정보 입력 */
+.student-info {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 2px solid #c8e4d8;
+}
+.student-info .si-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1f5a48;
+    margin-bottom: 10px;
+}
+.student-info .si-title .req {
+    font-size: 11px;
+    font-weight: 700;
+    color: #e07a5f;
+    margin-left: 5px;
+}
+.si-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.si-field { flex: 1; }
+.si-field:last-child { flex: 0 0 92px; }
+.si-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a7a70;
+    margin-bottom: 3px;
+}
+.si-field input, .si-field select {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 700;
+    border: 2px solid #d6e7e0;
+    border-radius: 9px;
+    outline: none;
+    color: #1f3a32;
+    background: white;
+    -webkit-appearance: none;
+}
+.si-field input:focus, .si-field select:focus { border-color: #5fb8a8; }
+.si-field select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235fb8a8' stroke-width='3'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    padding-right: 26px;
+}
+.send-status-box {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin: 4px 0 10px;
+    line-height: 1.5;
+}
+.send-status-box.sending { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
+.send-status-box.done { background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a; }
+.send-status-box.fail { background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a; }
 </style>
 </head>
 <body>
@@ -467,6 +530,34 @@ body {
 
     <!-- 테스트 모드 -->
     <div class="test-section">
+        <div class="student-info">
+            <div class="si-title">학생 정보<span class="req">* 제출 전 꼭 입력해 주세요</span></div>
+            <div class="si-row">
+                <div class="si-field">
+                    <label for="si-name">이름</label>
+                    <input type="text" id="si-name" placeholder="홍길동" autocomplete="off">
+                </div>
+            </div>
+            <div class="si-row">
+                <div class="si-field">
+                    <label for="si-school">학교</label>
+                    <input type="text" id="si-school" placeholder="○○중 또는 ○○고" autocomplete="off">
+                </div>
+                <div class="si-field">
+                    <label for="si-grade">학년</label>
+                    <select id="si-grade">
+                        <option value="">선택</option>
+                        <option value="중1">중1</option>
+                        <option value="중2">중2</option>
+                        <option value="중3">중3</option>
+                        <option value="고1">고1</option>
+                        <option value="고2">고2</option>
+                        <option value="고3">고3</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="progress-bar">
             <span class="lbl">입력: <span class="filled" id="filled-count">0</span> / 16</span>
             <span id="result-display"></span>
@@ -531,13 +622,7 @@ body {
 (function() {
     /* ============ 구글 폼 설정 — 회차/항목 ID ============ */
     var ROUND_NUMBER = 1;  // 회차 번호 (회차가 바뀌면 이 숫자만 수정)
-    var FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfsoiboFeTsLfPUpBvKGfz1pXMUENPiWklTUopF5zFOINz95Q/viewform?usp=pp_url';
-    var FIELD = {
-        round:   'entry.1897863140',   // 회차
-        score:   'entry.841387885',    // 점수
-        details: 'entry.1972999501',   // 문항별 결과
-        time:    'entry.1736197859'    // 제출 시각
-    };
+    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEnKykzvWfctUKPagE1RaXiwfbONFigptUY7Gk_X46jqNrlYA-uBRmB610HRuaPPbj/exec';
 
     function $(id) { return document.getElementById(id); }
     function normalize(s) { return (s || '').replace(/\s/g, '').trim(); }
@@ -570,6 +655,16 @@ body {
 
     function submit() {
         if (submitted) return;
+
+        var sName = ($('si-name').value || '').trim();
+        var sSchool = ($('si-school').value || '').trim();
+        var sGrade = $('si-grade').value || '';
+        if (!sName || !sSchool || !sGrade) {
+            alert('\uc81c\ucd9c \uc804\uc5d0 \uc774\ub984\u00b7\ud559\uad50\u00b7\ud559\ub144\uc744 \ubaa8\ub450 \uc785\ub825\ud574 \uc8fc\uc138\uc694!');
+            $('si-name').scrollIntoView({ block: 'center' });
+            return;
+        }
+
         submitted = true;
         var score = 0;
         var details = [];
@@ -643,20 +738,28 @@ body {
         // 구글 폼 자동 채움 URL 생성
         var detailStr = details.join('\n');
         var submitTime = nowStr();
-        var formUrl = FORM_BASE
-            + '&' + FIELD.round   + '=' + encodeURIComponent(ROUND_NUMBER)
-            + '&' + FIELD.score   + '=' + encodeURIComponent(score + ' / ' + TOTAL)
-            + '&' + FIELD.details + '=' + encodeURIComponent(detailStr)
-            + '&' + FIELD.time    + '=' + encodeURIComponent(submitTime);
 
         var finalEl = $('final');
         finalEl.innerHTML =
             '<div><span class="score-big">' + score + '</span><span class="total"> / ' + TOTAL + '</span></div>' +
             '<div class="msg">' + msg + '</div>' +
-            '<a href="' + formUrl + '" target="_blank" class="send-btn">📤 선생님께 결과 보내기</a>' +
-            '<br><button type="button" class="send-btn reset" onclick="location.reload()">처음부터 다시</button>' +
-            '<div class="send-note">위 버튼을 누르면 선생님께 자동 전송됩니다.<br>이름·학교·학년만 입력하고 [제출]을 눌러주세요.</div>';
+            '<div id="send-status" class="send-status-box sending">\ud83d\udce4 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc \uc804\uc1a1 \uc911\u2026</div>' +
+            '<button type="button" id="retry-btn" class="send-btn" style="display:none;">\ub2e4\uc2dc \uc804\uc1a1\ud558\uae30</button>' +
+            '<br><button type="button" class="send-btn reset" onclick="location.reload()">\ucc98\uc74c\ubd80\ud130 \ub2e4\uc2dc</button>';
         finalEl.className = 'final show';
+
+        var payload = {
+            time:    submitTime,
+            name:    sName,
+            school:  sSchool,
+            grade:   sGrade,
+            round:   ROUND_NUMBER,
+            score:   score + ' / ' + TOTAL,
+            details: detailStr
+        };
+        sendResult(payload);
+        var retryBtn = $('retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', function() { sendResult(payload); });
 
         $('result-display').innerHTML = '<span class="filled">맞힌 개수: ' + score + ' / ' + TOTAL + '</span>';
         document.querySelector('.submit-bar').style.display = 'none';
@@ -664,6 +767,24 @@ body {
         setTimeout(function() {
             finalEl.scrollIntoView({ block: 'center' });
         }, 300);
+    }
+
+    function sendResult(payload) {
+        var box = $('send-status');
+        var retryBtn = $('retry-btn');
+        if (box) { box.className = 'send-status-box sending'; box.innerHTML = '\ud83d\udce4 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc \uc804\uc1a1 \uc911\u2026'; }
+        if (retryBtn) retryBtn.style.display = 'none';
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        }).then(function() {
+            if (box) { box.className = 'send-status-box done'; box.innerHTML = '\u2705 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc\uac00 \uc804\uc1a1\ub418\uc5c8\uc5b4\uc694!'; }
+        }).catch(function() {
+            if (box) { box.className = 'send-status-box fail'; box.innerHTML = '\u26a0\ufe0f \uc804\uc1a1\uc5d0 \uc2e4\ud328\ud588\uc5b4\uc694. \uc778\ud130\ub137 \ud655\uc778 \ud6c4 \uc544\ub798 \ubc84\ud2bc\uc744 \ub20c\ub7ec\uc8fc\uc138\uc694.'; }
+            if (retryBtn) retryBtn.style.display = 'inline-block';
+        });
     }
 
     function attachListeners() {
