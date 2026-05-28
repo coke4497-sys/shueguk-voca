@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHUEGUK 어휘 5회</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%);
+    min-height: 100vh;
+    padding: 14px;
+    padding-bottom: 100px;
+    color: #1f3a32;
+    -webkit-text-size-adjust: 100%;
+}
+
+.container { max-width: 580px; margin: 0 auto; }
+
+.header {
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 18px 16px 14px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(45, 128, 104, 0.08);
+    border: 2px solid #c8e4d8;
+}
+.header .logo {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: #5fb8a8;
+    margin-bottom: 6px;
+}
+.header h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 21px;
+    font-weight: 800;
+    color: #1f5a48;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+}
+.header .round {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #2d8068;
+    background: #d4ede2;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+.tab-radio { display: none; }
+.mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.mode-label {
+    padding: 12px;
+    background: white;
+    border: 2px solid #c8e4d8;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#tab-study-radio:checked ~ .container .mode-label[for="tab-study-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-study-radio:checked ~ .container .test-section { display: none; }
+#tab-study-radio:checked ~ .container .study-section { display: block; }
+#tab-test-radio:checked ~ .container .mode-label[for="tab-test-radio"] {
+    background: #2d8068; color: white; border-color: #2d8068;
+}
+#tab-test-radio:checked ~ .container .study-section { display: none; }
+#tab-test-radio:checked ~ .container .test-section { display: block; }
+#tab-test-radio:checked ~ .submit-bar { display: block; }
+
+.cat-radio { display: none; }
+.category-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.cat-label {
+    padding: 10px 4px;
+    background: white;
+    border: 1.5px solid #d6e7e0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a7a70;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#cat-vocab-radio:checked ~ .container .cat-label[for="cat-vocab-radio"],
+#cat-concept-radio:checked ~ .container .cat-label[for="cat-concept-radio"],
+#cat-idiom-radio:checked ~ .container .cat-label[for="cat-idiom-radio"] {
+    background: #e9f5ef; border-color: #5fb8a8; color: #1f5a48;
+}
+.cat-content { display: none; }
+#cat-vocab-radio:checked ~ .container .cat-vocab { display: block; }
+#cat-concept-radio:checked ~ .container .cat-concept { display: block; }
+#cat-idiom-radio:checked ~ .container .cat-idiom { display: block; }
+
+.vocab-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px 18px;
+    border: 2px solid #ecf5f0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(45, 128, 104, 0.04);
+}
+.vocab-word {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1f3a32;
+    text-align: center;
+    margin-bottom: 6px;
+}
+.vocab-hanja {
+    text-align: center;
+    font-size: 13px;
+    color: #2d8068;
+    margin-bottom: 14px;
+    font-family: 'Nanum Myeongjo', serif;
+}
+.vocab-meaning {
+    font-size: 13px;
+    line-height: 1.7;
+    background: #e9f5ef;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border-left: 3px solid #5fb8a8;
+    margin-bottom: 10px;
+}
+.vocab-meaning .sub {
+    display: block;
+    font-size: 12px;
+    color: #5a7a70;
+    margin-top: 4px;
+}
+.vocab-meaning .num {
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 3px;
+}
+.vocab-example {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #5a7a70;
+    padding: 9px 12px;
+    background: #f4faf7;
+    border-radius: 8px;
+    font-style: italic;
+}
+.vocab-example b {
+    font-style: normal;
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+.concept-list {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #1f3a32;
+}
+.concept-list .ci {
+    padding: 6px 10px;
+    background: #f4faf7;
+    border-radius: 8px;
+    margin-bottom: 5px;
+}
+.concept-list .ci b {
+    color: #1f5a48;
+    font-weight: 800;
+    margin-right: 5px;
+}
+
+.test-section { display: none; }
+.study-section { display: block; }
+
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid #c8e4d8;
+}
+.progress-bar .filled { color: #2d8068; font-weight: 800; }
+.progress-bar .lbl { color: #5a7a70; }
+
+.q-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 2px solid #ecf5f0;
+}
+.q-card.correct { border-color: #5fbb8a; background: #dcf5e8; }
+.q-card.wrong { border-color: #f08a8a; background: #fde8e8; }
+.q-num {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+.section-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1f5a48;
+    background: #d4ede2;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 14px 0 8px;
+}
+.q-stem {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+.q-stem .underline {
+    text-decoration: underline;
+    text-decoration-color: #2d8068;
+    text-underline-offset: 3px;
+    font-weight: 700;
+}
+.q-key {
+    display: inline-block;
+    background: #e9f5ef;
+    border: 1.5px solid #5fb8a8;
+    color: #1f5a48;
+    padding: 1px 9px;
+    border-radius: 6px;
+    font-weight: 800;
+    margin-right: 5px;
+    font-size: 12px;
+}
+.answer-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 700;
+    border: 2px solid #d6e7e0;
+    border-radius: 9px;
+    outline: none;
+    color: #1f3a32;
+    -webkit-appearance: none;
+    background: white;
+}
+.answer-input:focus { border-color: #5fb8a8; }
+
+/* 학생 정보 입력 */
+.student-info {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 2px solid #c8e4d8;
+}
+.student-info .si-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1f5a48;
+    margin-bottom: 10px;
+}
+.student-info .si-title .req {
+    font-size: 11px;
+    font-weight: 700;
+    color: #e07a5f;
+    margin-left: 5px;
+}
+.si-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.si-field { flex: 1; }
+.si-field:last-child { flex: 0 0 92px; }
+.si-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a7a70;
+    margin-bottom: 3px;
+}
+.si-field input, .si-field select {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 700;
+    border: 2px solid #d6e7e0;
+    border-radius: 9px;
+    outline: none;
+    color: #1f3a32;
+    background: white;
+    -webkit-appearance: none;
+}
+.si-field input:focus, .si-field select:focus { border-color: #5fb8a8; }
+.si-field select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235fb8a8' stroke-width='3'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    padding-right: 26px;
+}
+
+/* 십자말풀이 이미지 */
+.crossword-wrap {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 2px solid #ecf5f0;
+    text-align: center;
+}
+.crossword-wrap img {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+.clue-box {
+    margin-top: 12px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #1f3a32;
+}
+.clue-box .clue-head {
+    font-weight: 800;
+    color: #1f5a48;
+    margin: 8px 0 3px;
+    font-size: 12px;
+}
+.clue-box .clue {
+    padding: 3px 0;
+}
+.clue-box .clue .n {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    font-weight: 800;
+    border-radius: 5px;
+    padding: 1px 7px;
+    margin-right: 6px;
+    font-size: 11px;
+}
+
+.boxki {
+    background: #e9f5ef;
+    border: 1.5px dashed #5fb8a8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    font-size: 12px;
+    color: #1f5a48;
+}
+.boxki b { display: block; margin-bottom: 4px; font-size: 11px; }
+.boxki-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    line-height: 1.6;
+}
+.boxki-item { padding: 4px 0; }
+.boxki-item .marker {
+    font-weight: 800;
+    color: #2d8068;
+    margin-right: 6px;
+}
+.boxki-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.boxki-word {
+    background: white;
+    border: 1.5px solid #5fb8a8;
+    color: #1f5a48;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.feedback {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct {
+    background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a;
+}
+.feedback.wrong {
+    background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a;
+}
+.feedback b { font-weight: 800; }
+
+.submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 2px solid #c8e4d8;
+    padding: 12px 14px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 14px rgba(45, 128, 104, 0.1);
+    z-index: 50;
+    display: none;
+}
+.submit-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.submit-status { flex: 1; font-size: 12px; font-weight: 700; color: #5a7a70; }
+.submit-status .num { color: #2d8068; font-weight: 800; font-size: 14px; }
+.submit-btn {
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.final {
+    display: none;
+    text-align: center;
+    background: white;
+    padding: 24px 18px;
+    border-radius: 20px;
+    border: 3px solid #5fb8a8;
+    margin: 12px 0;
+}
+.final.show { display: block; }
+.final .score-big {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 42px;
+    font-weight: 800;
+    color: #2d8068;
+}
+.final .total { font-size: 18px; color: #94a3b8; }
+.final .msg {
+    font-size: 13px;
+    color: #5a7a70;
+    margin: 8px 0 14px;
+    line-height: 1.6;
+}
+.send-btn {
+    display: inline-block;
+    background: #2d8068;
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+.send-btn.reset { background: white; color: #2d8068; border: 2px solid #2d8068; }
+.send-status-box {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin: 4px 0 10px;
+    line-height: 1.5;
+}
+.send-status-box.sending { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
+.send-status-box.done { background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a; }
+.send-status-box.fail { background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a; }
+.send-note {
+    font-size: 11px;
+    color: #5a7a70;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<input type="radio" name="mode" id="tab-study-radio" class="tab-radio" checked>
+<input type="radio" name="mode" id="tab-test-radio" class="tab-radio">
+
+<input type="radio" name="cat" id="cat-vocab-radio" class="cat-radio" checked>
+<input type="radio" name="cat" id="cat-concept-radio" class="cat-radio">
+<input type="radio" name="cat" id="cat-idiom-radio" class="cat-radio">
+
+<div class="container">
+    <div class="header">
+        <div class="logo">SHUEGUK</div>
+        <h1>어휘, 시작이 반이다.</h1>
+        <div class="round">5회 · 소설과 갈등 편</div>
+    </div>
+
+    <div class="mode-tabs">
+        <label class="mode-label" for="tab-study-radio">📚 학습 모드</label>
+        <label class="mode-label" for="tab-test-radio">✏️ 테스트 모드</label>
+    </div>
+
+    <!-- 학습 모드 -->
+    <div class="study-section">
+        <div class="category-tabs">
+            <label class="cat-label" for="cat-vocab-radio">필수 어휘</label>
+            <label class="cat-label" for="cat-concept-radio">필수 개념</label>
+            <label class="cat-label" for="cat-idiom-radio">한자성어</label>
+        </div>
+
+        <div class="cat-content cat-vocab">
+            <div class="vocab-card"><div class="vocab-word">격분</div><div class="vocab-hanja">激(과격할 격) 忿(성낼 분)</div><div class="vocab-meaning">몹시 분하고 노여운 감정이 북받쳐 오름.</div><div class="vocab-example"><b>예)</b>나는 치밀어 오르는 격분을 참지 못했다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">도량</div><div class="vocab-hanja">度(법도 도) 量(헤아릴 량)</div><div class="vocab-meaning">사물을 너그럽게 용납하여 처리할 수 있는 넓은 마음과 깊은 생각.</div><div class="vocab-example"><b>예)</b>그는 도량이 넓은 사람이다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">빙자</div><div class="vocab-hanja">憑(기댈 빙) 藉(깔개 자)</div><div class="vocab-meaning">말막음을 위하여 핑계로 내세움.</div><div class="vocab-example"><b>예)</b>생일잔치를 빙자로 그 일을 처리하지 못했다는 네 말은 받아들일 수 없다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">시비</div><div class="vocab-hanja">是(옳을 시) 非(그를 비)</div><div class="vocab-meaning"><span class="num">①</span>옳음과 그름.<span class="sub"><span class="num">②</span>옳고 그름을 따지는 말다툼.</span></div><div class="vocab-example"><b>예)</b>이 일은 시비를 자세히 따져 보아야 한다. / 모든 일에 시비를 거는 이유가 무엇이냐?</div></div>
+            <div class="vocab-card"><div class="vocab-word">요행</div><div class="vocab-hanja">僥(요행 요) 倖(요행 행)</div><div class="vocab-meaning">뜻밖에 얻는 행운.</div><div class="vocab-example"><b>예)</b>그는 요행을 바라고 복권을 샀다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">첩첩산중</div><div class="vocab-hanja">疊(겹쳐질 첩) 疊(겹쳐질 첩) 山(산 산) 中(가운데 중)</div><div class="vocab-meaning">여러 산이 겹치고 겹친 산속.</div><div class="vocab-example"><b>예)</b>그는 첩첩산중에서 길을 잃었다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">허구성</div><div class="vocab-hanja">虛(빌 허) 構(얽을 구) 性(성질 성)</div><div class="vocab-meaning">사실에서 벗어나 만들어진 모양이나 요소를 가지는 성질.</div><div class="vocab-example"><b>예)</b>소설의 대표적인 특성은 허구성이다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">회심</div><div class="vocab-hanja">會(모일 회) 心(마음 심)</div><div class="vocab-meaning">마음에 흐뭇하게 들어맞음. 또는 그런 상태의 마음.</div><div class="vocab-example"><b>예)</b>그는 얼굴에 회심의 미소를 지었다.</div></div>
+        </div>
+
+        <div class="cat-content cat-concept">
+            <div class="vocab-card"><div class="vocab-word">소설</div><div class="vocab-hanja">小(작을 소) 說(말씀 설)</div><div class="vocab-meaning">현실에 있음 직한 일을 작가가 상상하여 꾸며 쓴 산문 문학.</div><div class="concept-list"><div class="ci"><b>허구성</b>사실이 아닌 꾸며 낸 이야기임.</div><div class="ci"><b>개연성</b>실제로 있을 법한 이야기를 다룸.</div><div class="ci"><b>서사성</b>인물, 사건, 배경 등을 갖추고 사건이 일정한 시간의 흐름에 따라 전개됨.</div><div class="ci"><b>모방성</b>배경이 되는 현실의 삶의 모습이나 시대의 특성을 반영함.</div><div class="ci"><b>진실성</b>삶의 진실을 추구하고 바람직한 인간의 모습을 담음.</div></div></div>
+            <div class="vocab-card"><div class="vocab-word">갈등</div><div class="vocab-hanja">葛(칡 갈) 藤(등나무 등)</div><div class="vocab-meaning">문학 작품에서 인물의 마음속 생각이나 인물들 간의 관계가 대립되어 뒤엉킨 상태.</div><div class="concept-list"><div class="ci"><b>내적 갈등</b>한 인물의 마음속에서 일어나는 갈등.</div><div class="ci"><b>외적 갈등</b>인물과 인물, 혹은 그를 둘러싼 외부 환경 사이에서 일어나는 갈등.</div></div></div>
+            <div class="vocab-card"><div class="vocab-word">구성</div><div class="vocab-hanja">構(얽을 구) 成(이룰 성)</div><div class="vocab-meaning">문학 작품에서 형상화를 위한 여러 요소들을 밀접한 관련성을 가지고 배열하거나 서술하는 일.</div><div class="concept-list"><div class="ci"><b>발단</b>인물과 배경이 소개되고 사건의 실마리가 드러남.</div><div class="ci"><b>전개</b>인물 간의 갈등과 대립이 시작됨.</div><div class="ci"><b>위기</b>갈등이 깊어지고 긴장감이 조성됨.</div><div class="ci"><b>절정</b>갈등이 최고조에 이르며 사건 해결의 실마리가 제시됨.</div><div class="ci"><b>결말</b>갈등이 해결되고 주인공의 운명이 결정됨.</div></div></div>
+        </div>
+
+        <div class="cat-content cat-idiom">
+            <div class="vocab-card"><div class="vocab-word">견물생심</div><div class="vocab-hanja">見(볼 견) 物(물건 물) 生(날 생) 心(마음 심)</div><div class="vocab-meaning">어떠한 실물을 보게 되면 그것을 가지고 싶은 욕심이 생김.</div><div class="vocab-example"><b>예)</b>상점에 가면 견물생심이라고 과소비를 하게 된다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">과유불급</div><div class="vocab-hanja">過(지날 과) 猶(오히려 유) 不(아닐 불) 及(미칠 급)</div><div class="vocab-meaning">정도를 지나침은 미치지 못함과 같다는 뜻으로, 중용(中庸)이 중요함을 이르는 말.</div><div class="vocab-example"><b>예)</b>과유불급이라고, 너무 깊숙이 파고들어 가는 게 좋을 리 없다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">교각살우</div><div class="vocab-hanja">矯(바로잡을 교) 角(뿔 각) 殺(죽일 살) 牛(소 우)</div><div class="vocab-meaning">소의 뿔을 바로잡으려다가 소를 죽인다는 뜻으로, 잘못된 점을 고치려다가 그 방법이나 정도가 지나쳐 오히려 일을 그르침을 이르는 말.</div><div class="vocab-example"><b>예)</b>우리는 이번 사건에서 교각살우의 잘못을 저지르지 말아야 한다.</div></div>
+            <div class="vocab-card"><div class="vocab-word">소탐대실</div><div class="vocab-hanja">小(작을 소) 貪(탐할 탐) 大(큰 대) 失(잃을 실)</div><div class="vocab-meaning">작은 것을 탐하다가 큰 것을 잃음.</div><div class="vocab-example"><b>예)</b>눈앞의 결과만 중시하다가는 소탐대실의 잘못을 범할 수 있다.</div></div>
+        </div>
+    </div>
+
+    <!-- 테스트 모드 -->
+    <div class="test-section">
+        <div class="student-info">
+            <div class="si-title">학생 정보<span class="req">* 제출 전 꼭 입력해 주세요</span></div>
+            <div class="si-row">
+                <div class="si-field">
+                    <label for="si-name">이름</label>
+                    <input type="text" id="si-name" placeholder="홍길동" autocomplete="off">
+                </div>
+            </div>
+            <div class="si-row">
+                <div class="si-field">
+                    <label for="si-school">학교</label>
+                    <input type="text" id="si-school" placeholder="○○중 또는 ○○고" autocomplete="off">
+                </div>
+                <div class="si-field">
+                    <label for="si-grade">학년</label>
+                    <select id="si-grade">
+                        <option value="">선택</option>
+                        <option value="중1">중1</option>
+                        <option value="중2">중2</option>
+                        <option value="중3">중3</option>
+                        <option value="고1">고1</option>
+                        <option value="고2">고2</option>
+                        <option value="고3">고3</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <span class="lbl">입력: <span class="filled" id="filled-count">0</span> / 17</span>
+            <span id="result-display"></span>
+        </div>
+
+        <div class="section-label">01~06 다음 십자말풀이를 완성하시오.</div>
+
+        <div class="crossword-wrap">
+            <img src="data:image/png;base64,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tN23mp9s1dCKTrwNTzI8OvKU15znznOeM5znjK2dZ3qPFS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABHXkkZHb8o2f3FqnXfiRbW7/68NeUGcd98pujgAAPaWr4R0bG6uqqk/8zZtr9+m7PGX7M6bN6ObhAaDndDW8f7Bw97k1d5ddE4cCgJ7md7wAECS8ABAUudV8/Lnvqk1bNteu02fU4nkL6mWHPL+O+dMliUMDQE/pangP2mth/dMJJ9c+u8+tCQMD9cuH7q/rb9tQZ152fh11wLfqA684tQZaFt0AjB9dDe+sqdPrL5+z9Ik/Hzh/nzp68aH18kOX1cqLPlrn3zBarzvixd0cAQB6SiPLzcP22b9OfO4RNfLNrzdxeABoTGP3eQ9ZsKg2/ubBenTTY02NAABxjYV389iWGmi1auKEyPe7AKAnNBbeG/7r+7V4z71rcGBCUyMAQFzXwvuLB35dG35xx1a3XX/bzfWlW75Zpxw+1K3DA0BP6tp93gvXXFuXfOvr9ZKD/ryOWnxIzZ+1Wz3wyO/qq7euryu+c1O94cjj6ujFh3br8ADQk7oW3rce+4o6cP4+ddXNa+udV15Ujzz+WO0+fWYduvd+dcHwW+rQBft269AA0LO6Ft6B1kAd/5yldfyT/h0vAIx3HhsFAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEHCCwBBwgsAQcILAEGtdru9XTsOj45s344AdNX6NaubHmHc2HD2ea2nu48VLwAEDTY9AH+cT64A/cWKFwCChBcAgjpyq3nV0IpOvA1PMjw60vQIAHSBFS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAECS8ABAkvAAQJLwAEDXbiTYZHRzrxNgDQ96x4ASBIeAEgqNVut5ueAQDGDSteAAgSXgAIEl4ACBJeAAgSXgAIEl4ACBJeAAgSXgAIEl4ACBJeAAgSXgAIEl4ACPpvRYFGlLEpkxYAAAAASUVORK5CYII=" alt="십자말풀이">
+            <div class="clue-box">
+                <div class="clue-head">[가로]</div>
+                <div class="clue"><span class="n">1</span>사실에서 벗어나 만들어진 모양이나 요소를 가지는 성질.</div>
+                <div class="clue"><span class="n">4</span>마음에 흐뭇하게 들어맞음. 또는 그런 상태의 마음.</div>
+                <div class="clue"><span class="n">5</span>작은 것을 탐하다가 큰 것을 잃음.</div>
+                <div class="clue-head">[세로]</div>
+                <div class="clue"><span class="n">2</span>문학 작품에서 형상화를 위한 여러 요소들을 밀접한 관련성을 가지고 배열하거나 서술하는 일.</div>
+                <div class="clue"><span class="n">3</span>어떠한 실물을 보게 되면 그것을 가지고 싶은 욕심이 생김.</div>
+                <div class="clue"><span class="n">5</span>현실에 있음 직한 일을 작가가 상상하여 꾸며 쓴 산문 문학.</div>
+            </div>
+        </div>
+
+        <div class="q-card" id="card-0"><div><span class="q-num">01</span><span class="q-key">가로 1</span></div><div class="q-stem">사실에서 벗어나 만들어진 모양이나 요소를 가지는 성질.</div><input type="text" class="answer-input" id="input-0" data-answer="허구성" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-0"></div></div>
+
+        <div class="q-card" id="card-1"><div><span class="q-num">02</span><span class="q-key">가로 4</span></div><div class="q-stem">마음에 흐뭇하게 들어맞음. 또는 그런 상태의 마음.</div><input type="text" class="answer-input" id="input-1" data-answer="회심" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-1"></div></div>
+
+        <div class="q-card" id="card-2"><div><span class="q-num">03</span><span class="q-key">가로 5</span></div><div class="q-stem">작은 것을 탐하다가 큰 것을 잃음.</div><input type="text" class="answer-input" id="input-2" data-answer="소탐대실" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-2"></div></div>
+
+        <div class="q-card" id="card-3"><div><span class="q-num">04</span><span class="q-key">세로 2</span></div><div class="q-stem">문학 작품에서 형상화를 위한 여러 요소들을 밀접한 관련성을 가지고 배열하거나 서술하는 일.</div><input type="text" class="answer-input" id="input-3" data-answer="구성" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-3"></div></div>
+
+        <div class="q-card" id="card-4"><div><span class="q-num">05</span><span class="q-key">세로 3</span></div><div class="q-stem">어떠한 실물을 보게 되면 그것을 가지고 싶은 욕심이 생김.</div><input type="text" class="answer-input" id="input-4" data-answer="견물생심" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-4"></div></div>
+
+        <div class="q-card" id="card-5"><div><span class="q-num">06</span><span class="q-key">세로 5</span></div><div class="q-stem">현실에 있음 직한 일을 작가가 상상하여 꾸며 쓴 산문 문학.</div><input type="text" class="answer-input" id="input-5" data-answer="소설" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-5"></div></div>
+
+        <div class="section-label">07~10 다음 어휘의 뜻을 &lt;보기&gt;에서 찾아 기호를 쓰시오.</div>
+
+        <div class="boxki">
+            <b>&lt;보기&gt;</b>
+            <div class="boxki-items">
+                <div class="boxki-item"><span class="marker">ㄱ</span>뜻밖에 얻는 행운.</div>
+                <div class="boxki-item"><span class="marker">ㄴ</span>말막음을 위하여 핑계로 내세움.</div>
+                <div class="boxki-item"><span class="marker">ㄷ</span>몹시 분하고 노여운 감정이 북받쳐 오름.</div>
+                <div class="boxki-item"><span class="marker">ㄹ</span>사물을 너그럽게 용납하여 처리할 수 있는 넓은 마음과 깊은 생각.</div>
+            </div>
+        </div>
+
+        <div class="q-card" id="card-6"><div><span class="q-num">07</span></div><div class="q-stem">격분</div><input type="text" class="answer-input" id="input-6" data-answer="ㄷ" placeholder="기호를 입력하세요 (ㄱ, ㄴ, ㄷ, ㄹ)" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-6"></div></div>
+
+        <div class="q-card" id="card-7"><div><span class="q-num">08</span></div><div class="q-stem">도량</div><input type="text" class="answer-input" id="input-7" data-answer="ㄹ" placeholder="기호를 입력하세요 (ㄱ, ㄴ, ㄷ, ㄹ)" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-7"></div></div>
+
+        <div class="q-card" id="card-8"><div><span class="q-num">09</span></div><div class="q-stem">빙자</div><input type="text" class="answer-input" id="input-8" data-answer="ㄴ" placeholder="기호를 입력하세요 (ㄱ, ㄴ, ㄷ, ㄹ)" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-8"></div></div>
+
+        <div class="q-card" id="card-9"><div><span class="q-num">10</span></div><div class="q-stem">요행</div><input type="text" class="answer-input" id="input-9" data-answer="ㄱ" placeholder="기호를 입력하세요 (ㄱ, ㄴ, ㄷ, ㄹ)" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-9"></div></div>
+
+        <div class="section-label">11~14 &lt;보기&gt;의 글자를 조합하여 다음 뜻에 해당하는 어휘를 쓰시오.</div>
+
+        <div class="boxki"><b>&lt;보기&gt;</b><div class="boxki-words"><span class="boxki-word">첩</span><span class="boxki-word">과</span><span class="boxki-word">시</span><span class="boxki-word">우</span><span class="boxki-word">불</span><span class="boxki-word">각</span><span class="boxki-word">급</span><span class="boxki-word">유</span><span class="boxki-word">중</span><span class="boxki-word">교</span><span class="boxki-word">산</span><span class="boxki-word">살</span><span class="boxki-word">비</span></div></div>
+
+        <div class="q-card" id="card-10"><div><span class="q-num">11</span></div><div class="q-stem">여러 산이 겹치고 겹친 산속.</div><input type="text" class="answer-input" id="input-10" data-answer="첩첩산중" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-10"></div></div>
+
+        <div class="q-card" id="card-11"><div><span class="q-num">12</span></div><div class="q-stem">옳음과 그름. 또는 옳고 그름을 따지는 말다툼.</div><input type="text" class="answer-input" id="input-11" data-answer="시비" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-11"></div></div>
+
+        <div class="q-card" id="card-12"><div><span class="q-num">13</span></div><div class="q-stem">정도를 지나침은 미치지 못함과 같다는 뜻으로, 중용이 중요함을 이르는 말.</div><input type="text" class="answer-input" id="input-12" data-answer="과유불급" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-12"></div></div>
+
+        <div class="q-card" id="card-13"><div><span class="q-num">14</span></div><div class="q-stem">소의 뿔을 바로잡으려다가 소를 죽인다는 뜻으로, 잘못된 점을 고치려다가 그 방법이나 정도가 지나쳐 오히려 일을 그르침을 이르는 말.</div><input type="text" class="answer-input" id="input-13" data-answer="교각살우" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-13"></div></div>
+
+        <div class="section-label">15~17 빈칸에 들어갈 어휘를 쓰시오.</div>
+
+        <div class="q-card" id="card-14"><div><span class="q-num">15</span></div><div class="q-stem">( )은(는) 문학 작품에서 인물의 마음속 생각이나 인물들 간의 관계가 대립되어 뒤엉킨 상태를 의미한다.</div><input type="text" class="answer-input" id="input-14" data-answer="갈등" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-14"></div></div>
+
+        <div class="q-card" id="card-15"><div><span class="q-num">16</span></div><div class="q-stem">갈등의 종류에는 한 인물의 마음속에서 일어나는 ( ) 갈등과, 인물을 둘러싼 외부와의 사이에서 일어나는 외적 갈등이 있다.</div><input type="text" class="answer-input" id="input-15" data-answer="내적" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-15"></div></div>
+
+        <div class="q-card" id="card-16"><div><span class="q-num">17</span></div><div class="q-stem">소설은 갈등의 심화와 해결 과정에 따라 대체로 발단, 전개, 위기, ( ), 결말로 이루어진다.</div><input type="text" class="answer-input" id="input-16" data-answer="절정" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off"><div class="feedback" id="feedback-16"></div></div>
+
+        <div id="final" class="final"></div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-inner">
+        <div class="submit-status"><span class="num" id="bar-filled">0</span> / 17 입력</div>
+        <button type="button" class="submit-btn" id="submit-btn">전체 제출</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    /* ============ 결과 전송 설정 (구글 시트 앱스 스크립트) ============ */
+    var ROUND_NUMBER = 5;  // ★ 5회차
+    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEnKykzvWfctUKPagE1RaXiwfbONFigptUY7Gk_X46jqNrlYA-uBRmB610HRuaPPbj/exec';
+
+    function $(id) { return document.getElementById(id); }
+    function normalize(s) {
+        return (s || '').replace(/\s/g, '').trim()
+            .replace(/\u3220/g, '\u3131').replace(/\u3221/g, '\u3134')
+            .replace(/\u3222/g, '\u3137').replace(/\u3223/g, '\u3139');
+    }
+
+    var TOTAL = 17;
+    var submitted = false;
+
+    function updateProgress() {
+        var filled = 0;
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            if (inp && inp.value.trim()) filled++;
+        }
+        $('bar-filled').textContent = filled;
+        $('filled-count').textContent = filled;
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    function nowStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+             + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function submit() {
+        if (submitted) return;
+
+        // 학생 정보 확인
+        var sName = ($('si-name').value || '').trim();
+        var sSchool = ($('si-school').value || '').trim();
+        var sGrade = $('si-grade').value || '';
+        if (!sName || !sSchool || !sGrade) {
+            alert('\uc81c\ucd9c \uc804\uc5d0 \uc774\ub984\u00b7\ud559\uad50\u00b7\ud559\ub144\uc744 \ubaa8\ub450 \uc785\ub825\ud574 \uc8fc\uc138\uc694!');
+            $('si-name').scrollIntoView({ block: 'center' });
+            return;
+        }
+
+        submitted = true;
+        var score = 0;
+        var details = [];
+
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            var card = $('card-' + i);
+            var fb = $('feedback-' + i);
+            var userAns = normalize(inp.value);
+            var correctAns = normalize(inp.getAttribute('data-answer'));
+            var isCorrect = userAns && (userAns === correctAns);
+            var qNum = i + 1;
+
+            inp.disabled = true;
+            if (isCorrect) {
+                score++;
+                card.className = 'q-card correct';
+                fb.className = 'feedback show correct';
+                fb.innerHTML = '<b>\u2713 \uc815\ub2f5</b> \uc798\ud588\uc5b4\uc694!';
+                details.push(qNum + '. \u2713 ' + inp.value);
+            } else {
+                card.className = 'q-card wrong';
+                fb.className = 'feedback show wrong';
+                var userPart = inp.value.trim() ? '\uc785\ub825: <b>' + inp.value + '</b>\u3000\u2192\u3000' : '<b>\ubbf8\uc785\ub825</b>\u3000\u2192\u3000';
+                fb.innerHTML = '<b>\u2717</b> ' + userPart + '\uc815\ub2f5: <b>' + inp.getAttribute('data-answer') + '</b>';
+                details.push(qNum + '. \u2717 ' + (inp.value || '(\ubbf8\uc785\ub825)') + ' \u2192 \uc815\ub2f5: ' + inp.getAttribute('data-answer'));
+            }
+        }
+
+        var pct = Math.round((score / TOTAL) * 100);
+        var msg;
+        if (pct === 100) msg = '\uc804\ubd80 \uc815\ub2f5! 5\ud68c \uc644\uc804 \uc815\ubcf5\uc785\ub2c8\ub2e4 \ud83c\udf3f';
+        else if (pct >= 80) msg = '\ud6cc\ub96d\ud574\uc694! \ud2c0\ub9b0 \uc5b4\ud718\ub9cc \ub2e4\uc2dc \ud55c \ubc88 \uc0c8\uaca8\ubd10\uc694.';
+        else if (pct >= 60) msg = '\uc798 \ud480\uc5c8\uc5b4\uc694. \uc624\ub2f5\uc744 \uc911\uc2ec\uc73c\ub85c \ubcf5\uc2b5\ud574 \ubd10\uc694.';
+        else if (pct >= 40) msg = '\uc870\uae08 \ub354 \uc678\uc6cc\ubcfc\uae4c\uc694? \ud559\uc2b5 \ubaa8\ub4dc \uce74\ub4dc\ubd80\ud130 \ub2e4\uc2dc \ubcf4\uc138\uc694.';
+        else msg = '\uad1c\ucc2e\uc544\uc694. \ud559\uc2b5 \ubaa8\ub4dc\ub85c \ub3cc\uc544\uac00 \ucc9c\ucc9c\ud788 \uc775\ud600\ubd10\uc694.';
+
+        var detailStr = details.join('\n');
+        var submitTime = nowStr();
+
+        var finalEl = $('final');
+        finalEl.innerHTML =
+            '<div><span class="score-big">' + score + '</span><span class="total"> / ' + TOTAL + '</span></div>' +
+            '<div class="msg">' + msg + '</div>' +
+            '<div id="send-status" class="send-status-box sending">\ud83d\udce4 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc \uc804\uc1a1 \uc911\u2026</div>' +
+            '<button type="button" id="retry-btn" class="send-btn" style="display:none;">\ub2e4\uc2dc \uc804\uc1a1\ud558\uae30</button>' +
+            '<br><button type="button" class="send-btn reset" onclick="location.reload()">\ucc98\uc74c\ubd80\ud130 \ub2e4\uc2dc</button>';
+        finalEl.className = 'final show';
+
+        $('result-display').innerHTML = '<span class="filled">\ub9de\ud78c \uac1c\uc218: ' + score + ' / ' + TOTAL + '</span>';
+        document.querySelector('.submit-bar').style.display = 'none';
+
+        // 결과 데이터 구성
+        var payload = {
+            time:    submitTime,
+            name:    ($('si-name').value || '').trim(),
+            school:  ($('si-school').value || '').trim(),
+            grade:   $('si-grade').value || '',
+            round:   ROUND_NUMBER,
+            score:   score + ' / ' + TOTAL,
+            details: detailStr
+        };
+
+        sendResult(payload);
+
+        var retryBtn = $('retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', function() { sendResult(payload); });
+
+        setTimeout(function() {
+            finalEl.scrollIntoView({ block: 'center' });
+        }, 300);
+    }
+
+    function sendResult(payload) {
+        var box = $('send-status');
+        var retryBtn = $('retry-btn');
+        if (box) { box.className = 'send-status-box sending'; box.innerHTML = '\ud83d\udce4 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc \uc804\uc1a1 \uc911\u2026'; }
+        if (retryBtn) retryBtn.style.display = 'none';
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        }).then(function() {
+            if (box) {
+                box.className = 'send-status-box done';
+                box.innerHTML = '\u2705 \uc120\uc0dd\ub2d8\uaed8 \uacb0\uacfc\uac00 \uc804\uc1a1\ub418\uc5c8\uc5b4\uc694!';
+            }
+        }).catch(function() {
+            if (box) {
+                box.className = 'send-status-box fail';
+                box.innerHTML = '\u26a0\ufe0f \uc804\uc1a1\uc5d0 \uc2e4\ud328\ud588\uc5b4\uc694. \uc778\ud130\ub137 \ud655\uc778 \ud6c4 \uc544\ub798 \ubc84\ud2bc\uc744 \ub20c\ub7ec\uc8fc\uc138\uc694.';
+            }
+            if (retryBtn) retryBtn.style.display = 'inline-block';
+        });
+    }
+
+    function attachListeners() {
+        for (var i = 0; i < TOTAL; i++) {
+            var inp = $('input-' + i);
+            if (inp) inp.addEventListener('input', updateProgress);
+        }
+        var btn = $('submit-btn');
+        if (btn) btn.addEventListener('click', submit);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachListeners);
+    } else {
+        attachListeners();
+    }
+})();
+</script>
+</body>
+</html>
