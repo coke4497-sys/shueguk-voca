@@ -15,11 +15,13 @@
  *  ▶ 주의
  *    - ACCESS_KEY 는 대시보드의 ACCESS_KEY 와 반드시 동일해야 함.
  *    - SCRIPT_URL(=/exec) 은 test.html / 대시보드의 SCRIPT_URL 과 같아야 함.
+ *    - 칼럼 구성(HEADERS)을 바꾼 경우, 기존에 헤더가 있던 시트라면
+ *      헤더 행을 새 구성에 맞춰 주거나 시트를 비우고 시작하세요.
  ***************************************************************/
 
 var ACCESS_KEY = 'shueguk2026';   // 대시보드와 동일하게 유지
 var SHEET_NAME = '';              // 결과 시트 이름. 비워두면 첫 번째 시트를 사용
-var HEADERS = ['time', 'name', 'school', 'grade', 'round', 'score', 'details'];
+var HEADERS = ['time', 'name', 'school', 'grade', 'phone4', 'round', 'score', 'details'];
 
 /* 결과 시트 가져오기 (없으면 헤더 만들기) */
 function getSheet_() {
@@ -63,7 +65,7 @@ function doGet(e) {
 function readRows_() {
   var values = getSheet_().getDataRange().getValues();
   if (!values.length) return [];
-  var known = { time: 1, name: 1, school: 1, grade: 1, round: 1, score: 1, details: 1 };
+  var known = { time: 1, name: 1, school: 1, grade: 1, phone4: 1, round: 1, score: 1, details: 1 };
   var head = values[0].map(canon_);
   var hasHeader = head.some(function (k) { return known[k]; });
   var start = hasHeader ? 1 : 0;
@@ -85,6 +87,7 @@ function canon_(h) {
     'name': 'name', '이름': 'name',
     'school': 'school', '학교': 'school',
     'grade': 'grade', '학년': 'grade',
+    'phone4': 'phone4', '전화': 'phone4', '전화4': 'phone4', '전화뒤4': 'phone4', '전화뒷4': 'phone4', '휴대전화': 'phone4', '식별번호': 'phone4',
     'round': 'round', '주차': 'round', '회차': 'round',
     'score': 'score', '점수': 'score',
     'details': 'details', '상세': 'details'
