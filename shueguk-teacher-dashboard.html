@@ -48,7 +48,14 @@ tbody tr:hover { background: #f4faf7; }
 .pct.lo { background: #fde8e8; color: #8a1f1f; }
 .detail-btn { padding: 5px 10px; font-size: 11px; font-weight: 800; border: 1.5px solid #5fb8a8; background: white; color: #1f5a48; border-radius: 7px; cursor: pointer; }
 .detail-row td { background: #f4faf7; white-space: normal; }
-.detail-row pre { font-family: 'Gowun Dodum', monospace; font-size: 12px; line-height: 1.7; color: #2f4f45; white-space: pre-wrap; word-break: break-word; }
+
+/* 상세(틀린 내용) */
+.detail-box { font-size: 12.5px; line-height: 1.7; }
+.d-head { font-weight: 800; color: #1f5a48; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #c8e4d8; }
+.d-head .miss { color: #8a1f1f; }
+.d-line { padding: 3px 8px; border-radius: 6px; margin: 2px 0; word-break: break-word; }
+.d-line.d-wrong { background: #fdeaea; color: #8a1f1f; font-weight: 700; }
+.d-line.d-correct { color: #6a7d74; }
 
 .status { font-size: 13px; font-weight: 700; padding: 14px; border-radius: 12px; text-align: center; }
 .status.loading { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
@@ -85,14 +92,14 @@ tbody tr:hover { background: #f4faf7; }
     <div class="table-wrap" id="table-wrap" style="display:none;">
         <table>
             <thead><tr>
-                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>전화4</th><th>주차</th><th>점수</th><th>정답률</th><th>상세</th>
+                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>전화4</th><th>주차</th><th>점수(맞힌/전체)</th><th>정답률</th><th>상세</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
         </table>
     </div>
     <div class="row-flex" style="margin-top:8px;">
         <span class="muted" id="count-note"></span>
-        <span class="muted">정렬: 최근 제출 순</span>
+        <span class="muted">정렬: 최근 제출 순 · 상세에서 틀린 문항은 빨간색</span>
     </div>
 </div>
 
@@ -184,6 +191,22 @@ tbody tr:hover { background: #f4faf7; }
     function pctClass(p){ if (p===null) return ''; if (p>=80) return 'hi'; if (p>=60) return 'mid'; return 'lo'; }
     function esc(s){ return ('' + s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+    /* 상세: 줄 단위로 색칠 (틀린 문항=빨강). 맨 위에 점수·정답률·틀린 개수 요약 */
+    function renderDetails(r){
+        var lines = (r.details || '').split('\n').filter(function(l){ return l.trim(); });
+        var miss = lines.filter(function(l){ return l.indexOf('✗') >= 0; }).length;
+        var body = lines.map(function(line){
+            var cls = 'd-line';
+            if (line.indexOf('✗') >= 0) cls += ' d-wrong';
+            else if (line.indexOf('✓') >= 0) cls += ' d-correct';
+            return '<div class="' + cls + '">' + esc(line) + '</div>';
+        }).join('');
+        var head = '<div class="d-head">점수 ' + esc(r.score || '-') +
+            ' · 정답률 ' + (r.pct === null ? '-' : r.pct + '%') +
+            ' · <span class="miss">틀린 문항 ' + miss + '개</span></div>';
+        return '<div class="detail-box">' + head + (body || '(상세 없음)') + '</div>';
+    }
+
     function applyFilters(){
         var rows = getFiltered();
         // 요약 (필터 반영)
@@ -204,7 +227,7 @@ tbody tr:hover { background: #f4faf7; }
             tb.appendChild(tr);
             var dr = document.createElement('tr');
             dr.className = 'detail-row'; dr.style.display = 'none'; dr.id = 'detail-' + i;
-            dr.innerHTML = '<td colspan="9"><pre>' + (r.details ? esc(r.details) : '(상세 없음)') + '</pre></td>';
+            dr.innerHTML = '<td colspan="9">' + renderDetails(r) + '</td>';
             tb.appendChild(dr);
         });
         tb.querySelectorAll('.detail-btn').forEach(function(b){
