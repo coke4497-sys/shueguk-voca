@@ -1,15 +1,17 @@
 /***************************************************************
- * 슈국 어휘 테스트 — 결과 수집/조회 Apps Script
+ * 슈국 어휘 테스트 — 결과 수집/조회/삭제 Apps Script
  * ------------------------------------------------------------
  *  - doPost : 학생 test.html 이 보낸 결과를 시트에 저장
  *             (시트의 "헤더 이름"에 맞춰 저장 → 칼럼 순서가 달라도 안전)
  *  - doGet  : 교사 대시보드가 결과를 JSONP 로 읽어가는 통로
+ *             · action=delete → 선택한 행 삭제 (대시보드 "선택 삭제")
  *
- *  ▶ 설치
+ *  ▶ 설치 / 갱신
  *    1) 결과 시트(「2026 어휘, 시작이 반이다」) → [확장 프로그램 → Apps Script]
  *    2) Code.gs 에 이 내용을 붙여넣고 저장(Ctrl+S)
  *    3) [배포 → 배포 관리 → ✏️ → 버전: 새 버전 → 배포]  (주소 유지)
  *    4) 액세스 권한: "모든 사용자"
+ *    ※ 삭제 기능을 쓰려면 이 새 버전으로 "반드시" 재배포해야 합니다.
  *
  *  ▶ 권장: 기존 시트에 칼럼이 어긋난 옛 데이터가 있으면, 시트를 비우고
  *          시작하세요. 다음 제출 때 아래 HEADERS 헤더가 자동 생성됩니다.
@@ -66,13 +68,18 @@ function doPost(e) {
   }
 }
 
-/* 교사 대시보드 (JSONP GET) */
+/* 교사 대시보드 (JSONP GET) — 조회 / 삭제 */
 function doGet(e) {
   var p = (e && e.parameter) || {};
   var cb = p.callback || '';
-  var payload = (p.key !== ACCESS_KEY)
-    ? { ok: false, error: 'unauthorized' }
-    : { ok: true, rows: readRows_() };
+  var payload;
+  if (p.key !== ACCESS_KEY) {
+    payload = { ok: false, error: 'unauthorized' };
+  } else if (p.action === 'delete') {
+    payload = deleteRows_(p.ids || '');
+  } else {
+    payload = { ok: true, rows: readRows_() };
+  }
   var out = JSON.stringify(payload);
   if (cb) {
     return ContentService.createTextOutput(cb + '(' + out + ')')
@@ -82,7 +89,9 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/* 시트 → 행 객체 배열. 헤더 이름 기준으로 매핑 */
+/* 시트 → 행 객체 배열. 헤더 이름 기준으로 매핑.
+ * 각 행에 시트 행번호(_row, 1-based)와 내용 해시(_sig)를 덧붙여
+ * 대시보드가 안전하게 삭제 대상을 지정할 수 있게 한다. */
 function readRows_() {
   var sh = getSheet_();
   var values = sh.getDataRange().getValues();
@@ -92,9 +101,54 @@ function readRows_() {
   for (var i = 1; i < values.length; i++) {
     var obj = {};
     for (var j = 0; j < keys.length; j++) obj[keys[j] || ('col' + j)] = values[i][j];
+    obj._row = i + 1;             // 시트상의 실제 행번호 (헤더가 1행)
+    obj._sig = rowSig_(values[i]); // 행 내용 해시 (삭제 시 대조용)
     rows.push(obj);
   }
   return rows;
+}
+
+/* 선택 행 삭제. ids = "행번호:해시,행번호:해시,..."
+ * - 해시가 현재 행 내용과 일치할 때만 삭제 (그 사이 변경되면 건너뜀)
+ * - 행번호 내림차순으로 삭제해 인덱스 밀림 방지 */
+function deleteRows_(idsStr) {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch (e) { return { ok: false, error: 'busy' }; }
+  try {
+    var sh = getSheet_();
+    var values = sh.getDataRange().getValues();   // 삭제 전 스냅샷
+    var want = {};
+    ('' + idsStr).split(',').forEach(function (tok) {
+      tok = tok.trim(); if (!tok) return;
+      var idx = tok.indexOf(':');
+      var rn = parseInt(idx >= 0 ? tok.slice(0, idx) : tok, 10);
+      if (rn >= 2) want[rn] = idx >= 0 ? tok.slice(idx + 1) : '';
+    });
+    var nums = Object.keys(want).map(Number).sort(function (a, b) { return b - a; });
+    var deleted = 0, skipped = 0;
+    nums.forEach(function (rn) {
+      if (rn > values.length) { skipped++; return; }
+      if (rowSig_(values[rn - 1]) === want[rn]) { sh.deleteRow(rn); deleted++; }
+      else skipped++;
+    });
+    return { ok: true, deleted: deleted, skipped: skipped };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* 행 내용 해시 (MD5 앞 10자리) — Date는 epoch ms 로 정규화 */
+function rowSig_(vals) {
+  var s = vals.map(function (v) {
+    if (Object.prototype.toString.call(v) === '[object Date]') return v.getTime();
+    return '' + v;
+  }).join('');
+  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8);
+  var hex = '';
+  for (var i = 0; i < raw.length; i++) { var b = (raw[i] + 256) % 256; hex += ('0' + b.toString(16)).slice(-2); }
+  return hex.slice(0, 10);
 }
 
 /* 헤더 이름 표준화 (한글/영문 모두 허용) */
