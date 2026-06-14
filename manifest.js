@@ -20,6 +20,6 @@ window.VOCA = {
   ],
   tests: {
     "m1-1": { title: "친구·우정 편" },
-    "m1-2": { title: "2주차" }
+    "m1-2": { title: "비유와 표현 편" }
   }
 };
