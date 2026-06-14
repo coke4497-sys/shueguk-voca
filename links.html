@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>어휘 링크 발송 · 슈국 티쳐스</title>
+<meta name="description" content="이수경국어 어휘 테스트 — 학년·주차별 학생 발송 링크 복사" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23DCE9E4'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#E4EFEA; --surface:#FFFFFF;
+    --ink:#2A332F; --ink-soft:#65726B;
+    --accent:#3A6B5E; --icon:#3F4541; --icon-bg:#EBF0ED;
+    --line:#D7E3DD; --line-soft:#E5EDE8; --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--ink);
+    font-family:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:16px; line-height:1.75; -webkit-font-smoothing:antialiased; padding:0 0 80px; }
+  .wrap{max-width:640px;margin:0 auto;padding:0 22px;}
+
+  .back{display:inline-flex;align-items:center;gap:6px;margin:26px 0 0;color:var(--ink-soft);text-decoration:none;font-size:.86rem;}
+  .back svg{width:16px;height:16px;}
+  .back:hover{color:var(--accent);}
+
+  header{padding:18px 4px 22px;text-align:center;}
+  .tagline{font-family:"Gowun Batang",serif;font-size:1.5rem;font-weight:700;color:var(--accent);margin:0;}
+  .intro{color:var(--ink-soft);font-size:.94rem;margin:10px auto 0;max-width:27em;line-height:1.8;}
+
+  /* 학년 선택 */
+  .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 18px;}
+  .grade-btn{padding:12px 4px;background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;
+    font:inherit;font-size:.95rem;font-weight:700;color:var(--ink-soft);cursor:pointer;text-align:center;
+    transition:border-color .15s, color .15s, background .15s;}
+  .grade-btn:hover{border-color:var(--line);color:var(--accent);}
+  .grade-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  .section-title{font-family:"Gowun Batang",serif;font-size:1.05rem;font-weight:700;color:var(--accent);margin:4px 2px 10px;}
+
+  .list{display:flex;flex-direction:column;gap:8px;}
+  .row{display:flex;align-items:center;gap:12px;background:var(--surface);
+    border:1px solid var(--line-soft);border-radius:13px;padding:13px 15px;}
+  .row.pending{opacity:.55;}
+  .wk{flex:none;width:62px;font-weight:700;color:var(--accent);font-size:.9rem;}
+  .row.pending .wk{color:var(--ink-soft);}
+  .ttl{flex:1;min-width:0;font-size:.9rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ttl .muted{color:var(--ink-soft);}
+  .acts{flex:none;display:flex;gap:8px;align-items:center;}
+  .open{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:var(--accent);text-decoration:none;}
+  .open svg{width:14px;height:14px;}
+  .copy{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:.78rem;color:var(--ink-soft);
+    background:#EEF3F0;border:1px solid var(--line-soft);border-radius:9px;padding:6px 11px;cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;}
+  .copy svg{width:13px;height:13px;}
+  .copy:hover{color:var(--accent);border-color:var(--line);}
+  .copy.done{color:var(--accent);background:#DDEAE2;border-color:#C5DBCF;}
+  .badge{font-size:.72rem;color:var(--ink-soft);background:#DCE6E0;border-radius:20px;padding:3px 10px;}
+
+  footer{text-align:center;margin-top:40px;color:var(--ink-soft);font-size:.82rem;line-height:2;}
+  @media (max-width:430px){
+    .ttl{white-space:normal;}
+    .grades{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <a class="back" href="https://coke4497-sys.github.io/shueguk-hub/voca.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    어휘 테스트
+  </a>
+
+  <header>
+    <p class="tagline">어휘 링크 발송</p>
+    <p class="intro">학년을 고르면 주차별 학생 응시 링크가 나옵니다.<br />"링크 복사"를 눌러 학생에게 보내세요.</p>
+  </header>
+
+  <div class="grades" id="grades"></div>
+  <div class="section-title" id="sec-title"></div>
+  <div class="list" id="list"></div>
+
+  <footer><p>이수경국어 Shueguk · 교사용</p></footer>
+</main>
+
+<script src="manifest.js"></script>
+<script>
+(function(){
+  var V = window.VOCA || { weeks:25, grades:[], tests:{}, baseUrl:'' };
+  var current = (V.grades[0] && V.grades[0].code) || '';
+
+  function $(id){ return document.getElementById(id); }
+  function studentUrl(code, wk){ return V.baseUrl + '?g=' + code + '&w=' + wk; }
+
+  /* 학년 버튼 */
+  var gWrap = $('grades');
+  V.grades.forEach(function(g){
+    var b = document.createElement('button');
+    b.className = 'grade-btn' + (g.code === current ? ' active' : '');
+    b.textContent = g.label;
+    b.setAttribute('data-code', g.code);
+    b.addEventListener('click', function(){
+      current = g.code;
+      gWrap.querySelectorAll('.grade-btn').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      render();
+    });
+    gWrap.appendChild(b);
+  });
+
+  function gradeLabel(code){ var o = V.grades.filter(function(x){return x.code===code;})[0]; return o ? o.label : code; }
+
+  function render(){
+    $('sec-title').textContent = gradeLabel(current) + ' · 전체 ' + V.weeks + '주차';
+    var list = $('list'); list.innerHTML = '';
+    for (var wk = 1; wk <= V.weeks; wk++){
+      var key = current + '-' + wk;
+      var t = V.tests[key];
+      var row = document.createElement('div');
+      row.className = 'row' + (t ? '' : ' pending');
+      if (t){
+        row.innerHTML =
+          '<span class="wk">' + wk + '주차</span>' +
+          '<span class="ttl">' + escapeHtml(t.title || '') + '</span>' +
+          '<span class="acts">' +
+            '<a class="open" href="' + studentUrl(current, wk) + '" target="_blank" rel="noopener">미리보기' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>' +
+            '<button type="button" class="copy" data-url="' + studentUrl(current, wk) + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+              '링크 복사</button>' +
+          '</span>';
+      } else {
+        row.innerHTML =
+          '<span class="wk">' + wk + '주차</span>' +
+          '<span class="ttl"><span class="muted">아직 등록되지 않았어요</span></span>' +
+          '<span class="acts"><span class="badge">준비 중</span></span>';
+      }
+      list.appendChild(row);
+    }
+    list.querySelectorAll('.copy').forEach(function(btn){
+      btn.addEventListener('click', function(){ copyText(btn.getAttribute('data-url'), btn); });
+    });
+  }
+
+  function copyText(url, btn){
+    var done = function(){
+      btn.classList.add('done');
+      var label = btn.childNodes[btn.childNodes.length - 1];
+      label.textContent = '복사됐어요!';
+      setTimeout(function(){ btn.classList.remove('done'); label.textContent = '링크 복사'; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(done, function(){ fallback(url, done); });
+    } else { fallback(url, done); }
+  }
+  function fallback(url, done){
+    var t = document.createElement('textarea');
+    t.value = url; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch(_){ prompt('아래 주소를 복사하세요:', url); }
+    document.body.removeChild(t);
+  }
+  function escapeHtml(s){ return ('' + s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  render();
+})();
+</script>
+</body>
+</html>
