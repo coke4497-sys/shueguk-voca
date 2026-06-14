@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>shueguk 어휘 티쳐스</title>
+<meta property="og:title" content="shueguk 어휘 티쳐스">
+<meta property="og:description" content="학생 어휘 테스트 결과 확인 페이지">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#2d8068">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%); min-height: 100vh; padding: 16px; color: #1f3a32; -webkit-text-size-adjust: 100%; }
+.container { max-width: 980px; margin: 0 auto; }
+
+.header { text-align: center; margin-bottom: 14px; padding: 18px 16px 14px; background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(45,128,104,0.08); border: 2px solid #c8e4d8; }
+.header .logo { font-family: 'Nanum Myeongjo', serif; font-size: 11px; font-weight: 800; letter-spacing: 5px; color: #5fb8a8; margin-bottom: 6px; }
+.header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 22px; font-weight: 800; color: #1f5a48; letter-spacing: -0.5px; }
+
+.card { background: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; border: 2px solid #c8e4d8; }
+
+/* 요약 */
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.stat { background: white; border: 2px solid #c8e4d8; border-radius: 14px; padding: 14px; text-align: center; }
+.stat .big { font-family: 'Nanum Myeongjo', serif; font-size: 30px; font-weight: 800; color: #2d8068; line-height: 1.1; }
+.stat .lbl { font-size: 12px; font-weight: 700; color: #5a7a70; margin-top: 4px; }
+
+/* 컨트롤 */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.ctrl { display: flex; flex-direction: column; gap: 3px; }
+.ctrl label { font-size: 11px; font-weight: 700; color: #5a7a70; }
+.ctrl select, .ctrl input { padding: 9px 10px; font-size: 13px; font-family: inherit; font-weight: 700; border: 2px solid #d6e7e0; border-radius: 9px; outline: none; color: #1f3a32; background: white; -webkit-appearance: none; }
+.ctrl select:focus, .ctrl input:focus { border-color: #5fb8a8; }
+.btn { padding: 9px 16px; font-size: 13px; font-weight: 800; font-family: inherit; border: none; border-radius: 9px; background: #2d8068; color: white; cursor: pointer; }
+.btn.ghost { background: white; color: #2d8068; border: 2px solid #2d8068; }
+
+/* 테이블 */
+.table-wrap { overflow-x: auto; background: white; border: 2px solid #c8e4d8; border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 680px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf5f0; white-space: nowrap; }
+th { background: #e9f5ef; color: #1f5a48; font-weight: 800; font-size: 12px; position: sticky; top: 0; }
+tbody tr:hover { background: #f4faf7; }
+.score-cell { font-weight: 800; color: #1f3a32; }
+.pct { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-align: center; }
+.pct.hi { background: #dcf5e8; color: #1a5c3a; }
+.pct.mid { background: #fff3d6; color: #8a5a1f; }
+.pct.lo { background: #fde8e8; color: #8a1f1f; }
+.detail-btn { padding: 5px 10px; font-size: 11px; font-weight: 800; border: 1.5px solid #5fb8a8; background: white; color: #1f5a48; border-radius: 7px; cursor: pointer; }
+.detail-row td { background: #f4faf7; white-space: normal; }
+.detail-row pre { font-family: 'Gowun Dodum', monospace; font-size: 12px; line-height: 1.7; color: #2f4f45; white-space: pre-wrap; word-break: break-word; }
+
+.status { font-size: 13px; font-weight: 700; padding: 14px; border-radius: 12px; text-align: center; }
+.status.loading { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
+.status.fail { background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a; }
+.muted { color: #94a3b8; font-size: 12px; }
+.row-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">SHUEGUK</div>
+        <h1>어휘 티쳐스 페이지</h1>
+    </div>
+
+    <div class="summary">
+        <div class="stat"><div class="big" id="stat-count">–</div><div class="lbl">제출 수</div></div>
+        <div class="stat"><div class="big" id="stat-avg">–</div><div class="lbl">평균 정답률</div></div>
+        <div class="stat"><div class="big" id="stat-students">–</div><div class="lbl">응시 학생 수</div></div>
+    </div>
+
+    <div class="card">
+        <div class="controls">
+            <div class="ctrl"><label>학년</label><select id="f-grade"><option value="">전체</option></select></div>
+            <div class="ctrl"><label>주차</label><select id="f-round"><option value="">전체</option></select></div>
+            <div class="ctrl"><label>이름 검색</label><input type="text" id="f-name" placeholder="이름 일부" autocomplete="off"></div>
+            <button class="btn" id="btn-refresh">↻ 새로고침</button>
+            <button class="btn ghost" id="btn-csv">CSV 내려받기</button>
+        </div>
+    </div>
+
+    <div id="status" class="status loading">결과를 불러오는 중…</div>
+
+    <div class="table-wrap" id="table-wrap" style="display:none;">
+        <table>
+            <thead><tr>
+                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>주차</th><th>점수</th><th>정답률</th><th>상세</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+    <div class="row-flex" style="margin-top:8px;">
+        <span class="muted" id="count-note"></span>
+        <span class="muted">정렬: 최근 제출 순</span>
+    </div>
+</div>
+
+<script>
+(function() {
+    /* ===== 설정 ===== */
+    // 어휘 학생 테스트(test.html)가 결과를 보내는 Apps Script와 같은 배포 주소.
+    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEnKykzvWfctUKPagE1RaXiwfbONFigptUY7Gk_X46jqNrlYA-uBRmB610HRuaPPbj/exec';
+    var ACCESS_KEY = 'shueguk2026';   // ← Apps Script의 ACCESS_KEY와 똑같이 맞추세요.
+
+    var ALL = [];   // 전체 행
+    function $(id){ return document.getElementById(id); }
+
+    /* ===== JSONP 로더 ===== */
+    function loadData(){
+        showStatus('loading', '결과를 불러오는 중…');
+        var cb = 'shueguk_cb_' + Date.now();
+        var done = false;
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '⚠️ 응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, 12000);
+        window[cb] = function(resp){
+            if (done) return; done = true; clearTimeout(timer); cleanup();
+            if (!resp || resp.ok !== true){
+                showStatus('fail', '⚠️ ' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '데이터를 가져오지 못했습니다.'));
+                return;
+            }
+            ALL = (resp.rows || []).map(normalizeRow);
+            buildFilters(); applyFilters();
+        };
+        var s = document.createElement('script');
+        s.id = cb + '_s';
+        s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&t=' + Date.now();
+        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '⚠️ 스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
+        document.body.appendChild(s);
+        function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
+    }
+
+    function fmtTime(raw){
+        raw = '' + (raw==null ? '' : raw);
+        if (!raw) return '';
+        // 시트가 날짜로 변환해 ISO(UTC)로 넘어온 경우 → 한국 시간으로 표시
+        if (raw.indexOf('T') >= 0 || raw.indexOf('Z') >= 0) {
+            var d = new Date(raw);
+            if (!isNaN(d.getTime())) {
+                try {
+                    var o = {};
+                    new Intl.DateTimeFormat('ko-KR', {
+                        timeZone: 'Asia/Seoul', hourCycle: 'h23',
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    }).formatToParts(d).forEach(function(p){ o[p.type] = p.value; });
+                    return o.year + '-' + o.month + '-' + o.day + ' ' + o.hour + ':' + o.minute;
+                } catch (e) {}
+            }
+        }
+        return raw;   // 이미 보기 좋은 문자열이면 그대로
+    }
+    function normalizeRow(r){
+        var sc = parseScore(r.score);
+        return { time: '' + (r.time||''), timeDisplay: fmtTime(r.time),
+                 name: '' + (r.name||''), school: '' + (r.school||''), grade: '' + (r.grade||''),
+                 round: '' + (r.round||''), score: '' + (r.score||''),
+                 details: '' + (r.details||''), correct: sc.correct, total: sc.total, pct: sc.pct };
+    }
+    function parseScore(s){
+        s = '' + (s||''); var m = s.match(/(\d+)\s*\/\s*(\d+)/);
+        if (!m) return { correct: null, total: null, pct: null };
+        var c = parseInt(m[1],10), t = parseInt(m[2],10);
+        return { correct: c, total: t, pct: t ? Math.round(c/t*100) : null };
+    }
+
+    /* ===== 필터 ===== */
+    function uniq(arr){ var o = {}, out = []; arr.forEach(function(x){ if (x !== '' && !o[x]){ o[x] = 1; out.push(x); } }); return out; }
+    function sortNum(arr){ return arr.sort(function(a,b){ var na=parseFloat(a), nb=parseFloat(b); if(!isNaN(na)&&!isNaN(nb)) return na-nb; return a<b?-1:(a>b?1:0); }); }
+    function fillSelect(sel, vals){ var cur = sel.value; sel.innerHTML = '<option value="">전체</option>'; vals.forEach(function(v){ sel.innerHTML += '<option value="'+v+'">'+v+'</option>'; }); sel.value = cur; }
+    function buildFilters(){
+        fillSelect($('f-grade'), uniq(ALL.map(function(r){return r.grade;})));
+        fillSelect($('f-round'), sortNum(uniq(ALL.map(function(r){return r.round;}))));
+    }
+    function getFiltered(){
+        var g = $('f-grade').value, rd = $('f-round').value, nm = $('f-name').value.trim().toLowerCase();
+        return ALL.filter(function(r){
+            if (g && r.grade !== g) return false;
+            if (rd && r.round !== rd) return false;
+            if (nm && r.name.toLowerCase().indexOf(nm) < 0) return false;
+            return true;
+        }).sort(function(a,b){ return a.time < b.time ? 1 : (a.time > b.time ? -1 : 0); });
+    }
+
+    function pctClass(p){ if (p===null) return ''; if (p>=80) return 'hi'; if (p>=60) return 'mid'; return 'lo'; }
+    function esc(s){ return ('' + s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function applyFilters(){
+        var rows = getFiltered();
+        // 요약 (필터 반영)
+        $('stat-count').textContent = rows.length;
+        var pcts = rows.map(function(r){return r.pct;}).filter(function(p){return p!==null;});
+        $('stat-avg').textContent = pcts.length ? Math.round(pcts.reduce(function(a,b){return a+b;},0)/pcts.length) + '%' : '–';
+        $('stat-students').textContent = uniq(rows.map(function(r){return r.name + '|' + r.school;})).length;
+
+        var tb = $('tbody'); tb.innerHTML = '';
+        rows.forEach(function(r, i){
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + esc(r.timeDisplay) + '</td><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.school) + '</td>' +
+                '<td>' + esc(r.grade) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
+                '<td class="score-cell">' + esc(r.score) + '</td>' +
+                '<td>' + (r.pct===null ? '–' : '<span class="pct ' + pctClass(r.pct) + '">' + r.pct + '%</span>') + '</td>' +
+                '<td><button class="detail-btn" data-i="' + i + '">상세</button></td>';
+            tb.appendChild(tr);
+            var dr = document.createElement('tr');
+            dr.className = 'detail-row'; dr.style.display = 'none'; dr.id = 'detail-' + i;
+            dr.innerHTML = '<td colspan="8"><pre>' + (r.details ? esc(r.details) : '(상세 없음)') + '</pre></td>';
+            tb.appendChild(dr);
+        });
+        tb.querySelectorAll('.detail-btn').forEach(function(b){
+            b.addEventListener('click', function(){ var d = $('detail-' + b.getAttribute('data-i')); d.style.display = d.style.display === 'none' ? 'table-row' : 'none'; });
+        });
+
+        $('table-wrap').style.display = rows.length ? 'block' : 'none';
+        $('count-note').textContent = '표시: ' + rows.length + '건 / 전체 ' + ALL.length + '건';
+        if (!rows.length) showStatus('loading', ALL.length ? '조건에 맞는 결과가 없습니다.' : '아직 제출된 결과가 없습니다.');
+        else $('status').style.display = 'none';
+    }
+
+    function showStatus(type, msg){ var el = $('status'); el.style.display = 'block'; el.className = 'status ' + type; el.textContent = msg; if (type !== 'loading') $('table-wrap').style.display = 'none'; }
+
+    /* ===== CSV ===== */
+    function toCSV(rows){
+        var head = ['제출시각','이름','학교','학년','주차','점수','정답률','상세'];
+        function q(v){ v = '' + (v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
+        var lines = [head.map(q).join(',')];
+        rows.forEach(function(r){ lines.push([r.timeDisplay,r.name,r.school,r.grade,r.round,r.score,(r.pct===null?'':r.pct+'%'),r.details].map(q).join(',')); });
+        return '﻿' + lines.join('\r\n');   // BOM: 엑셀 한글 깨짐 방지
+    }
+    function downloadCSV(){
+        var rows = getFiltered();
+        var blob = new Blob([toCSV(rows)], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'shueguk_vocab_results_' + new Date().toISOString().slice(0,10) + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    /* ===== 이벤트 ===== */
+    ['f-grade','f-round'].forEach(function(id){ $(id).addEventListener('change', applyFilters); });
+    $('f-name').addEventListener('input', applyFilters);
+    $('btn-refresh').addEventListener('click', loadData);
+    $('btn-csv').addEventListener('click', downloadCSV);
+    loadData();
+})();
+</script>
+</body>
+</html>
