@@ -151,7 +151,12 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
     function $(id) { return document.getElementById(id); }
     function esc(s) { return ('' + (s == null ? '' : s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    function normalize(s) { return (s || '').replace(/\s/g, '').trim(); }
+    // 공백 제거 + 원문자(①②③… / ㉠㉡…)를 보통 글자로 정규화하여 채점에 유연하게 대응
+    function normalize(s) {
+        s = (s || '').replace(/\s/g, '').trim();
+        var map = { '①':'1','②':'2','③':'3','④':'4','⑤':'5','⑥':'6','⑦':'7','⑧':'8','⑨':'9','⑩':'10' };
+        return s.replace(/[①-⑩]/g, function(c) { return map[c] || c; });
+    }
 
     var params = new URLSearchParams(location.search);
     var gCode = params.get('g') || '';
@@ -355,7 +360,8 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             } else {
                 var inp = $('input-' + i);
                 var user = normalize(inp.value);
-                isCorrect = !!user && (user === normalize(q.answer));
+                var accept = (q.answers && q.answers.length) ? q.answers : [q.answer];
+                isCorrect = !!user && accept.some(function(a) { return normalize(a) === user; });
                 inp.disabled = true;
                 fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
                 if (isCorrect) {
