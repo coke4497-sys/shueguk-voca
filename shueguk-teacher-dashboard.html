@@ -37,7 +37,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
 /* 테이블 */
 .table-wrap { overflow-x: auto; background: white; border: 2px solid #c8e4d8; border-radius: 16px; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 680px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf5f0; white-space: nowrap; }
 th { background: #e9f5ef; color: #1f5a48; font-weight: 800; font-size: 12px; position: sticky; top: 0; }
 tbody tr:hover { background: #f4faf7; }
@@ -85,7 +85,7 @@ tbody tr:hover { background: #f4faf7; }
     <div class="table-wrap" id="table-wrap" style="display:none;">
         <table>
             <thead><tr>
-                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>주차</th><th>점수</th><th>정답률</th><th>상세</th>
+                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>전화4</th><th>주차</th><th>점수</th><th>정답률</th><th>상세</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
         </table>
@@ -153,7 +153,7 @@ tbody tr:hover { background: #f4faf7; }
         var sc = parseScore(r.score);
         return { time: '' + (r.time||''), timeDisplay: fmtTime(r.time),
                  name: '' + (r.name||''), school: '' + (r.school||''), grade: '' + (r.grade||''),
-                 round: '' + (r.round||''), score: '' + (r.score||''),
+                 phone4: '' + (r.phone4||''), round: '' + (r.round||''), score: '' + (r.score||''),
                  details: '' + (r.details||''), correct: sc.correct, total: sc.total, pct: sc.pct };
     }
     function parseScore(s){
@@ -190,21 +190,21 @@ tbody tr:hover { background: #f4faf7; }
         $('stat-count').textContent = rows.length;
         var pcts = rows.map(function(r){return r.pct;}).filter(function(p){return p!==null;});
         $('stat-avg').textContent = pcts.length ? Math.round(pcts.reduce(function(a,b){return a+b;},0)/pcts.length) + '%' : '–';
-        $('stat-students').textContent = uniq(rows.map(function(r){return r.name + '|' + r.school;})).length;
+        $('stat-students').textContent = uniq(rows.map(function(r){return r.name + '|' + r.school + '|' + r.phone4;})).length;
 
         var tb = $('tbody'); tb.innerHTML = '';
         rows.forEach(function(r, i){
             var tr = document.createElement('tr');
             tr.innerHTML =
                 '<td>' + esc(r.timeDisplay) + '</td><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.school) + '</td>' +
-                '<td>' + esc(r.grade) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
+                '<td>' + esc(r.grade) + '</td><td>' + esc(r.phone4) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
                 '<td class="score-cell">' + esc(r.score) + '</td>' +
                 '<td>' + (r.pct===null ? '–' : '<span class="pct ' + pctClass(r.pct) + '">' + r.pct + '%</span>') + '</td>' +
                 '<td><button class="detail-btn" data-i="' + i + '">상세</button></td>';
             tb.appendChild(tr);
             var dr = document.createElement('tr');
             dr.className = 'detail-row'; dr.style.display = 'none'; dr.id = 'detail-' + i;
-            dr.innerHTML = '<td colspan="8"><pre>' + (r.details ? esc(r.details) : '(상세 없음)') + '</pre></td>';
+            dr.innerHTML = '<td colspan="9"><pre>' + (r.details ? esc(r.details) : '(상세 없음)') + '</pre></td>';
             tb.appendChild(dr);
         });
         tb.querySelectorAll('.detail-btn').forEach(function(b){
@@ -221,10 +221,10 @@ tbody tr:hover { background: #f4faf7; }
 
     /* ===== CSV ===== */
     function toCSV(rows){
-        var head = ['제출시각','이름','학교','학년','주차','점수','정답률','상세'];
+        var head = ['제출시각','이름','학교','학년','전화4','주차','점수','정답률','상세'];
         function q(v){ v = '' + (v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
         var lines = [head.map(q).join(',')];
-        rows.forEach(function(r){ lines.push([r.timeDisplay,r.name,r.school,r.grade,r.round,r.score,(r.pct===null?'':r.pct+'%'),r.details].map(q).join(',')); });
+        rows.forEach(function(r){ lines.push([r.timeDisplay,r.name,r.school,r.grade,r.phone4,r.round,r.score,(r.pct===null?'':r.pct+'%'),r.details].map(q).join(',')); });
         return '﻿' + lines.join('\r\n');   // BOM: 엑셀 한글 깨짐 방지
     }
     function downloadCSV(){
