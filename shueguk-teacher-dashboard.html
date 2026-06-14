@@ -72,8 +72,8 @@ tbody tr:hover { background: #f4faf7; }
 
     <div class="card">
         <div class="controls">
-            <div class="ctrl"><label>회차</label><select id="f-round"><option value="">전체</option></select></div>
             <div class="ctrl"><label>학년</label><select id="f-grade"><option value="">전체</option></select></div>
+            <div class="ctrl"><label>주차</label><select id="f-round"><option value="">전체</option></select></div>
             <div class="ctrl"><label>이름 검색</label><input type="text" id="f-name" placeholder="이름 일부" autocomplete="off"></div>
             <button class="btn" id="btn-refresh">↻ 새로고침</button>
             <button class="btn ghost" id="btn-csv">CSV 내려받기</button>
@@ -85,7 +85,7 @@ tbody tr:hover { background: #f4faf7; }
     <div class="table-wrap" id="table-wrap" style="display:none;">
         <table>
             <thead><tr>
-                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>회차</th><th>점수</th><th>정답률</th><th>상세</th>
+                <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>주차</th><th>점수</th><th>정답률</th><th>상세</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
         </table>
@@ -99,7 +99,7 @@ tbody tr:hover { background: #f4faf7; }
 <script>
 (function() {
     /* ===== 설정 ===== */
-    // 어휘 학생 테스트(shueguk-vocab-*-FINAL.html)가 결과를 보내는 Apps Script와 같은 배포 주소.
+    // 어휘 학생 테스트(test.html)가 결과를 보내는 Apps Script와 같은 배포 주소.
     var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEnKykzvWfctUKPagE1RaXiwfbONFigptUY7Gk_X46jqNrlYA-uBRmB610HRuaPPbj/exec';
     var ACCESS_KEY = 'shueguk2026';   // ← Apps Script의 ACCESS_KEY와 똑같이 맞추세요.
 
@@ -165,16 +165,17 @@ tbody tr:hover { background: #f4faf7; }
 
     /* ===== 필터 ===== */
     function uniq(arr){ var o = {}, out = []; arr.forEach(function(x){ if (x !== '' && !o[x]){ o[x] = 1; out.push(x); } }); return out; }
+    function sortNum(arr){ return arr.sort(function(a,b){ var na=parseFloat(a), nb=parseFloat(b); if(!isNaN(na)&&!isNaN(nb)) return na-nb; return a<b?-1:(a>b?1:0); }); }
     function fillSelect(sel, vals){ var cur = sel.value; sel.innerHTML = '<option value="">전체</option>'; vals.forEach(function(v){ sel.innerHTML += '<option value="'+v+'">'+v+'</option>'; }); sel.value = cur; }
     function buildFilters(){
-        fillSelect($('f-round'), uniq(ALL.map(function(r){return r.round;})).sort());
         fillSelect($('f-grade'), uniq(ALL.map(function(r){return r.grade;})));
+        fillSelect($('f-round'), sortNum(uniq(ALL.map(function(r){return r.round;}))));
     }
     function getFiltered(){
-        var rd = $('f-round').value, g = $('f-grade').value, nm = $('f-name').value.trim().toLowerCase();
+        var g = $('f-grade').value, rd = $('f-round').value, nm = $('f-name').value.trim().toLowerCase();
         return ALL.filter(function(r){
-            if (rd && r.round !== rd) return false;
             if (g && r.grade !== g) return false;
+            if (rd && r.round !== rd) return false;
             if (nm && r.name.toLowerCase().indexOf(nm) < 0) return false;
             return true;
         }).sort(function(a,b){ return a.time < b.time ? 1 : (a.time > b.time ? -1 : 0); });
@@ -196,7 +197,7 @@ tbody tr:hover { background: #f4faf7; }
             var tr = document.createElement('tr');
             tr.innerHTML =
                 '<td>' + esc(r.timeDisplay) + '</td><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.school) + '</td>' +
-                '<td>' + esc(r.grade) + '</td><td>' + esc(r.round) + '</td>' +
+                '<td>' + esc(r.grade) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
                 '<td class="score-cell">' + esc(r.score) + '</td>' +
                 '<td>' + (r.pct===null ? '–' : '<span class="pct ' + pctClass(r.pct) + '">' + r.pct + '%</span>') + '</td>' +
                 '<td><button class="detail-btn" data-i="' + i + '">상세</button></td>';
@@ -220,7 +221,7 @@ tbody tr:hover { background: #f4faf7; }
 
     /* ===== CSV ===== */
     function toCSV(rows){
-        var head = ['제출시각','이름','학교','학년','회차','점수','정답률','상세'];
+        var head = ['제출시각','이름','학교','학년','주차','점수','정답률','상세'];
         function q(v){ v = '' + (v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
         var lines = [head.map(q).join(',')];
         rows.forEach(function(r){ lines.push([r.timeDisplay,r.name,r.school,r.grade,r.round,r.score,(r.pct===null?'':r.pct+'%'),r.details].map(q).join(',')); });
@@ -235,7 +236,7 @@ tbody tr:hover { background: #f4faf7; }
     }
 
     /* ===== 이벤트 ===== */
-    ['f-round','f-grade'].forEach(function(id){ $(id).addEventListener('change', applyFilters); });
+    ['f-grade','f-round'].forEach(function(id){ $(id).addEventListener('change', applyFilters); });
     $('f-name').addEventListener('input', applyFilters);
     $('btn-refresh').addEventListener('click', loadData);
     $('btn-csv').addEventListener('click', downloadCSV);
