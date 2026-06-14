@@ -34,13 +34,19 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .ctrl select:focus, .ctrl input:focus { border-color: #5fb8a8; }
 .btn { padding: 9px 16px; font-size: 13px; font-weight: 800; font-family: inherit; border: none; border-radius: 9px; background: #2d8068; color: white; cursor: pointer; }
 .btn.ghost { background: white; color: #2d8068; border: 2px solid #2d8068; }
+.btn.danger { background: white; color: #b3261e; border: 2px solid #e7a6a0; }
+.btn.danger:hover { background: #fdeaea; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* 테이블 */
 .table-wrap { overflow-x: auto; background: white; border: 2px solid #c8e4d8; border-radius: 16px; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 800px; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf5f0; white-space: nowrap; }
 th { background: #e9f5ef; color: #1f5a48; font-weight: 800; font-size: 12px; position: sticky; top: 0; }
 tbody tr:hover { background: #f4faf7; }
+tr.sel-on > td { background: #eef9f3; }
+.chk-cell { width: 34px; text-align: center; padding-right: 4px; padding-left: 12px; }
+.chk-cell input, th.chk-cell input { width: 16px; height: 16px; accent-color: #2d8068; cursor: pointer; }
 .score-cell { font-weight: 800; color: #1f3a32; }
 .pct { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-align: center; }
 .pct.hi { background: #dcf5e8; color: #1a5c3a; }
@@ -84,6 +90,7 @@ tbody tr:hover { background: #f4faf7; }
             <div class="ctrl"><label>이름 검색</label><input type="text" id="f-name" placeholder="이름 일부" autocomplete="off"></div>
             <button class="btn" id="btn-refresh">↻ 새로고침</button>
             <button class="btn ghost" id="btn-csv">CSV 내려받기</button>
+            <button class="btn danger" id="btn-delete" disabled>🗑 선택 삭제</button>
         </div>
     </div>
 
@@ -92,6 +99,7 @@ tbody tr:hover { background: #f4faf7; }
     <div class="table-wrap" id="table-wrap" style="display:none;">
         <table>
             <thead><tr>
+                <th class="chk-cell"><input type="checkbox" id="chk-all" title="표시된 항목 전체 선택"></th>
                 <th>제출시각</th><th>이름</th><th>학교</th><th>학년</th><th>전화4</th><th>주차</th><th>점수(맞힌/전체)</th><th>정답률</th><th>상세</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
@@ -110,8 +118,12 @@ tbody tr:hover { background: #f4faf7; }
     var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW4aXPUq9Iu3VtnjHuInUxhG6dPaNIYawDRWTYEjvEIsv4kjEceXDb_y9OX5Lx3-9e/exec';
     var ACCESS_KEY = 'shueguk2026';   // ← Apps Script의 ACCESS_KEY와 똑같이 맞추세요.
 
-    var ALL = [];   // 전체 행
+    var ALL = [];     // 전체 행
+    var VIEW = [];    // 현재 필터로 보이는 행
+    var selected = {};// 선택된 행 (key: _row:_sig)
     function $(id){ return document.getElementById(id); }
+    function rowId(r){ return r._row + ':' + r._sig; }
+    function selCount(){ return Object.keys(selected).length; }
 
     /* ===== JSONP 로더 ===== */
     function loadData(){
@@ -126,12 +138,43 @@ tbody tr:hover { background: #f4faf7; }
                 return;
             }
             ALL = (resp.rows || []).map(normalizeRow);
+            pruneSelection();
             buildFilters(); applyFilters();
         };
         var s = document.createElement('script');
         s.id = cb + '_s';
         s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&t=' + Date.now();
         s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '⚠️ 스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
+        document.body.appendChild(s);
+        function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
+    }
+
+    /* ===== 선택 삭제 (JSONP, action=delete) ===== */
+    function deleteSelected(){
+        var ids = Object.keys(selected);
+        if (!ids.length){ return; }
+        if (!confirm('선택한 ' + ids.length + '건을 삭제할까요?\n삭제한 데이터는 되돌릴 수 없습니다.')) return;
+        showStatus('loading', '🗑 ' + ids.length + '건 삭제 중…');
+        $('btn-delete').disabled = true;
+        var cb = 'shueguk_del_' + Date.now();
+        var done = false;
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '⚠️ 삭제 응답이 없습니다. 배포(새 버전)와 URL을 확인하세요.'); } }, 15000);
+        window[cb] = function(resp){
+            if (done) return; done = true; clearTimeout(timer); cleanup();
+            if (!resp || resp.ok !== true){
+                showStatus('fail', '⚠️ ' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '삭제하지 못했습니다. Apps Script를 새 버전으로 재배포했는지 확인하세요.'));
+                return;
+            }
+            selected = {};
+            var msg = '✅ ' + (resp.deleted||0) + '건 삭제됨';
+            if (resp.skipped) msg += ' · ' + resp.skipped + '건은 변경되어 건너뜀';
+            showStatus('loading', msg + ' — 새로고침 중…');
+            loadData();
+        };
+        var s = document.createElement('script');
+        s.id = cb + '_s';
+        s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&action=delete&ids=' + encodeURIComponent(ids.join(',')) + '&t=' + Date.now();
+        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '⚠️ 삭제 요청을 보내지 못했습니다. URL을 확인하세요.'); } };
         document.body.appendChild(s);
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
@@ -161,13 +204,19 @@ tbody tr:hover { background: #f4faf7; }
         return { time: '' + (r.time||''), timeDisplay: fmtTime(r.time),
                  name: '' + (r.name||''), school: '' + (r.school||''), grade: '' + (r.grade||''),
                  phone4: '' + (r.phone4||''), round: '' + (r.round||''), score: '' + (r.score||''),
-                 details: '' + (r.details||''), correct: sc.correct, total: sc.total, pct: sc.pct };
+                 details: '' + (r.details||''), correct: sc.correct, total: sc.total, pct: sc.pct,
+                 _row: r._row, _sig: '' + (r._sig||'') };
     }
     function parseScore(s){
         s = '' + (s||''); var m = s.match(/(\d+)\s*\/\s*(\d+)/);
         if (!m) return { correct: null, total: null, pct: null };
         var c = parseInt(m[1],10), t = parseInt(m[2],10);
         return { correct: c, total: t, pct: t ? Math.round(c/t*100) : null };
+    }
+    /* 새로 불러온 데이터에 없는 선택은 정리 */
+    function pruneSelection(){
+        var live = {}; ALL.forEach(function(r){ live[rowId(r)] = 1; });
+        Object.keys(selected).forEach(function(id){ if (!live[id]) delete selected[id]; });
     }
 
     /* ===== 필터 ===== */
@@ -190,6 +239,7 @@ tbody tr:hover { background: #f4faf7; }
 
     function pctClass(p){ if (p===null) return ''; if (p>=80) return 'hi'; if (p>=60) return 'mid'; return 'lo'; }
     function esc(s){ return ('' + s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
     /* 상세: 줄 단위로 색칠 (틀린 문항=빨강). 맨 위에 점수·정답률·틀린 개수 요약 */
     function renderDetails(r){
@@ -209,6 +259,7 @@ tbody tr:hover { background: #f4faf7; }
 
     function applyFilters(){
         var rows = getFiltered();
+        VIEW = rows;
         // 요약 (필터 반영)
         $('stat-count').textContent = rows.length;
         var pcts = rows.map(function(r){return r.pct;}).filter(function(p){return p!==null;});
@@ -217,8 +268,12 @@ tbody tr:hover { background: #f4faf7; }
 
         var tb = $('tbody'); tb.innerHTML = '';
         rows.forEach(function(r, i){
+            var id = rowId(r);
+            var on = !!selected[id];
             var tr = document.createElement('tr');
+            if (on) tr.className = 'sel-on';
             tr.innerHTML =
+                '<td class="chk-cell"><input type="checkbox" class="row-chk" data-id="' + escAttr(id) + '"' + (on ? ' checked' : '') + '></td>' +
                 '<td>' + esc(r.timeDisplay) + '</td><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.school) + '</td>' +
                 '<td>' + esc(r.grade) + '</td><td>' + esc(r.phone4) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
                 '<td class="score-cell">' + esc(r.score) + '</td>' +
@@ -227,17 +282,39 @@ tbody tr:hover { background: #f4faf7; }
             tb.appendChild(tr);
             var dr = document.createElement('tr');
             dr.className = 'detail-row'; dr.style.display = 'none'; dr.id = 'detail-' + i;
-            dr.innerHTML = '<td colspan="9">' + renderDetails(r) + '</td>';
+            dr.innerHTML = '<td colspan="10">' + renderDetails(r) + '</td>';
             tb.appendChild(dr);
         });
         tb.querySelectorAll('.detail-btn').forEach(function(b){
             b.addEventListener('click', function(){ var d = $('detail-' + b.getAttribute('data-i')); d.style.display = d.style.display === 'none' ? 'table-row' : 'none'; });
         });
+        tb.querySelectorAll('.row-chk').forEach(function(c){
+            c.addEventListener('change', function(){
+                var id = c.getAttribute('data-id');
+                if (c.checked) selected[id] = 1; else delete selected[id];
+                var tr = c.closest('tr'); if (tr) tr.className = c.checked ? 'sel-on' : '';
+                syncSelUI();
+            });
+        });
 
         $('table-wrap').style.display = rows.length ? 'block' : 'none';
-        $('count-note').textContent = '표시: ' + rows.length + '건 / 전체 ' + ALL.length + '건';
+        syncSelUI();
         if (!rows.length) showStatus('loading', ALL.length ? '조건에 맞는 결과가 없습니다.' : '아직 제출된 결과가 없습니다.');
         else $('status').style.display = 'none';
+    }
+
+    /* 선택 상태에 따라 버튼/전체선택 체크/카운트 갱신 */
+    function syncSelUI(){
+        var n = selCount();
+        var del = $('btn-delete');
+        del.disabled = (n === 0);
+        del.textContent = n ? ('🗑 선택 삭제 (' + n + ')') : '🗑 선택 삭제';
+        var visIds = VIEW.map(rowId);
+        var allOn = visIds.length > 0 && visIds.every(function(id){ return selected[id]; });
+        var chkAll = $('chk-all'); if (chkAll) chkAll.checked = allOn;
+        var note = '표시: ' + VIEW.length + '건 / 전체 ' + ALL.length + '건';
+        if (n) note += ' · 선택 ' + n + '건';
+        $('count-note').textContent = note;
     }
 
     function showStatus(type, msg){ var el = $('status'); el.style.display = 'block'; el.className = 'status ' + type; el.textContent = msg; if (type !== 'loading') $('table-wrap').style.display = 'none'; }
@@ -263,6 +340,12 @@ tbody tr:hover { background: #f4faf7; }
     $('f-name').addEventListener('input', applyFilters);
     $('btn-refresh').addEventListener('click', loadData);
     $('btn-csv').addEventListener('click', downloadCSV);
+    $('btn-delete').addEventListener('click', deleteSelected);
+    $('chk-all').addEventListener('change', function(){
+        var on = $('chk-all').checked;
+        VIEW.forEach(function(r){ var id = rowId(r); if (on) selected[id] = 1; else delete selected[id]; });
+        applyFilters();
+    });
     loadData();
 })();
 </script>
