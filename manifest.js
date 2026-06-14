@@ -19,6 +19,7 @@ window.VOCA = {
     { code: "h3", label: "고3" }
   ],
   tests: {
-    "m1-1": { title: "친구·우정 편" }
+    "m1-1": { title: "친구·우정 편" },
+    "m1-2": { title: "2주차" }
   }
 };
