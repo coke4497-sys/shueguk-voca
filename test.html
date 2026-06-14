@@ -55,6 +55,11 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .ox-label { background: white; border: 2px solid #d6e7e0; padding: 14px; border-radius: 9px; font-size: 17px; font-weight: 800; color: #5a7a70; text-align: center; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
 .ox-label.active { background: #d4ede2; border-color: #2d8068; color: #1f5a48; }
 
+.opt-buttons { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.opt-label { background: white; border: 2px solid #d6e7e0; padding: 11px 13px; border-radius: 9px; font-size: 13px; font-weight: 700; color: #1f3a32; text-align: left; line-height: 1.5; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.opt-label.active { background: #d4ede2; border-color: #2d8068; color: #1f5a48; }
+.opt-label .opt-num { font-weight: 800; color: #2d8068; margin-right: 6px; }
+
 .feedback { margin-top: 8px; padding: 9px 12px; border-radius: 9px; font-size: 12px; line-height: 1.5; display: none; }
 .feedback.show { display: block; }
 .feedback.correct { background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a; }
@@ -79,10 +84,11 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .student-info .si-title { font-size: 13px; font-weight: 800; color: #1f5a48; margin-bottom: 10px; }
 .student-info .si-title .req { font-size: 11px; font-weight: 700; color: #e07a5f; margin-left: 5px; }
 .si-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.si-row:last-child { margin-bottom: 0; }
 .si-field { flex: 1; }
 .si-field label { display: block; font-size: 11px; font-weight: 700; color: #5a7a70; margin-bottom: 3px; }
-.si-field input { width: 100%; padding: 10px; font-size: 14px; font-family: inherit; font-weight: 700; border: 2px solid #d6e7e0; border-radius: 9px; outline: none; color: #1f3a32; background: white; -webkit-appearance: none; }
-.si-field input:focus { border-color: #5fb8a8; }
+.si-field input, .si-field select { width: 100%; padding: 10px; font-size: 14px; font-family: inherit; font-weight: 700; border: 2px solid #d6e7e0; border-radius: 9px; outline: none; color: #1f3a32; background: white; -webkit-appearance: none; }
+.si-field input:focus, .si-field select:focus { border-color: #5fb8a8; }
 .send-status-box { font-size: 13px; font-weight: 700; padding: 12px 14px; border-radius: 10px; margin: 4px 0 10px; line-height: 1.5; }
 .send-status-box.sending { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
 .send-status-box.done { background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a; }
@@ -104,7 +110,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         <div class="round" id="h-round"></div>
     </div>
 
-    <div class="mode-tabs">
+    <div class="mode-tabs" id="mode-tabs">
         <div class="mode-label active" id="tab-study">📚 학습 모드</div>
         <div class="mode-label" id="tab-test">✏️ 테스트 모드</div>
     </div>
@@ -122,6 +128,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             <div class="si-row">
                 <div class="si-field"><label for="si-name">이름</label><input type="text" id="si-name" placeholder="홍길동" autocomplete="off"></div>
                 <div class="si-field"><label for="si-school">학교</label><input type="text" id="si-school" placeholder="○○중 또는 ○○고" autocomplete="off"></div>
+            </div>
+            <div class="si-row">
+                <div class="si-field"><label for="si-grade">학년</label><select id="si-grade"></select></div>
+                <div class="si-field"><label for="si-phone">전화 뒷 4자리</label><input type="text" id="si-phone" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></div>
             </div>
         </div>
 
@@ -157,12 +167,14 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         var map = { '①':'1','②':'2','③':'3','④':'4','⑤':'5','⑥':'6','⑦':'7','⑧':'8','⑨':'9','⑩':'10' };
         return s.replace(/[①-⑩]/g, function(c) { return map[c] || c; });
     }
+    function circ(n) { var s = '①②③④⑤⑥⑦⑧⑨⑩'; n = parseInt(n, 10); return (n >= 1 && n <= 10) ? s.charAt(n - 1) : ('(' + n + ')'); }
 
     var params = new URLSearchParams(location.search);
     var gCode = params.get('g') || '';
     var week = params.get('w') || '';
 
     var GRADE_LABEL = '';
+    var GRADES = (window.VOCA && VOCA.grades) ? VOCA.grades.map(function(x){ return x.label; }) : ['중1','중2','중3','고1','고2','고3'];
     if (window.VOCA && VOCA.grades) {
         VOCA.grades.forEach(function(x) { if (x.code === gCode) GRADE_LABEL = x.label; });
     }
@@ -195,9 +207,25 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         $('total-count').textContent = TOTAL;
         $('bar-total').textContent = TOTAL;
 
+        // 학년 드롭다운: 테스트 학년을 기본 선택
+        var gradeSel = $('si-grade');
+        gradeSel.innerHTML = '';
+        GRADES.forEach(function(label) {
+            var o = document.createElement('option');
+            o.value = label; o.textContent = label;
+            if (label === GRADE_LABEL) o.selected = true;
+            gradeSel.appendChild(o);
+        });
+
         buildStudy(data.study || {});
         buildQuestions();
         attachListeners();
+
+        // 학습 카드가 없는 회차(종합 문제 등)는 테스트 모드로 바로 시작
+        if ($('study-section').classList.contains('hidden')) {
+            $('mode-tabs').classList.add('hidden');
+            setMode('test');
+        }
 
         $('loading').classList.add('hidden');
         $('app').classList.remove('hidden');
@@ -275,6 +303,12 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
                     '<div class="ox-label" data-ox="O" data-i="' + i + '">O</div>' +
                     '<div class="ox-label" data-ox="X" data-i="' + i + '">X</div></div>' +
                     '<div class="feedback" id="feedback-' + i + '"></div>';
+            } else if (q.type === 'choice') {
+                var opts = (q.options || []).map(function(opt, oi) {
+                    return '<div class="opt-label" data-opt="' + (oi + 1) + '" data-i="' + i + '"><span class="opt-num">' + circ(oi + 1) + '</span>' + esc(opt) + '</div>';
+                }).join('');
+                card.innerHTML = head + '<div class="opt-buttons">' + opts + '</div>' +
+                    '<div class="feedback" id="feedback-' + i + '"></div>';
             } else {
                 card.innerHTML = head +
                     '<input type="text" class="answer-input" id="input-' + i + '" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" autocapitalize="off">' +
@@ -286,11 +320,12 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
     function pad2(n) { n = '' + n; return n.length < 2 ? '0' + n : n; }
 
     /* ===== 진행/입력 ===== */
-    var oxChoice = {};
+    var oxChoice = {}, choiceSel = {};
     function updateProgress() {
         var filled = 0;
         QUESTIONS.forEach(function(q, i) {
             if (q.type === 'ox') { if (oxChoice[i]) filled++; }
+            else if (q.type === 'choice') { if (choiceSel[i]) filled++; }
             else { var inp = $('input-' + i); if (inp && inp.value.trim()) filled++; }
         });
         $('bar-filled').textContent = filled;
@@ -309,6 +344,16 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
                         updateProgress();
                     });
                 });
+            } else if (q.type === 'choice') {
+                $('card-' + i).querySelectorAll('.opt-label').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        if (submitted) return;
+                        choiceSel[i] = b.getAttribute('data-opt');
+                        $('card-' + i).querySelectorAll('.opt-label').forEach(function(x) { x.classList.remove('active'); });
+                        b.classList.add('active');
+                        updateProgress();
+                    });
+                });
             } else {
                 var inp = $('input-' + i);
                 if (inp) inp.addEventListener('input', updateProgress);
@@ -317,6 +362,8 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         $('tab-study').addEventListener('click', function() { setMode('study'); });
         $('tab-test').addEventListener('click', function() { setMode('test'); });
         $('submit-btn').addEventListener('click', submit);
+        // 전화 뒷 4자리: 숫자만
+        $('si-phone').addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); });
     }
 
     function setMode(m) {
@@ -339,8 +386,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         if (submitted) return;
         var sName = ($('si-name').value || '').trim();
         var sSchool = ($('si-school').value || '').trim();
-        if (!sName || !sSchool) {
-            alert('제출 전에 이름·학교를 입력해 주세요!');
+        var sGrade = $('si-grade').value || '';
+        var sPhone = ($('si-phone').value || '').trim();
+        if (!sName || !sSchool || !sGrade || !/^[0-9]{4}$/.test(sPhone)) {
+            alert('제출 전에 이름·학교·학년·전화 뒷 4자리(숫자 4자리)를 모두 입력해 주세요!');
             $('si-name').scrollIntoView({ block: 'center' });
             return;
         }
@@ -357,6 +406,13 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
                 fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
                 fb.innerHTML = '<b>' + (isCorrect ? '✓' : '✗') + ' 정답 ' + esc(q.answer) + '</b> ' + esc(q.explanation || '');
                 details.push(qNum + '. ' + (isCorrect ? '✓ ' : '✗ ') + (choice || '(미선택)') + (isCorrect ? '' : ' → 정답: ' + q.answer));
+            } else if (q.type === 'choice') {
+                var sel = choiceSel[i] || null;
+                isCorrect = (sel === ('' + q.answer));
+                card.querySelectorAll('.opt-label').forEach(function(x) { x.style.pointerEvents = 'none'; });
+                fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+                fb.innerHTML = '<b>' + (isCorrect ? '✓' : '✗') + ' 정답 ' + circ(q.answer) + '</b> ' + esc(q.explanation || '');
+                details.push(qNum + '. ' + (isCorrect ? '✓ ' : '✗ ') + (sel ? circ(sel) : '(미선택)') + (isCorrect ? '' : ' → 정답: ' + circ(q.answer)));
             } else {
                 var inp = $('input-' + i);
                 var user = normalize(inp.value);
@@ -394,7 +450,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         finalEl.className = 'final show';
 
         var payload = {
-            time: nowStr(), name: sName, school: sSchool, grade: GRADE_LABEL,
+            time: nowStr(), name: sName, school: sSchool, grade: sGrade, phone4: sPhone,
             round: week, score: score + ' / ' + TOTAL, details: details.join('\n')
         };
         sendResult(payload);
