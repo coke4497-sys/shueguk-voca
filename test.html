@@ -84,10 +84,11 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .student-info .si-title { font-size: 13px; font-weight: 800; color: #1f5a48; margin-bottom: 10px; }
 .student-info .si-title .req { font-size: 11px; font-weight: 700; color: #e07a5f; margin-left: 5px; }
 .si-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.si-row:last-child { margin-bottom: 0; }
 .si-field { flex: 1; }
 .si-field label { display: block; font-size: 11px; font-weight: 700; color: #5a7a70; margin-bottom: 3px; }
-.si-field input { width: 100%; padding: 10px; font-size: 14px; font-family: inherit; font-weight: 700; border: 2px solid #d6e7e0; border-radius: 9px; outline: none; color: #1f3a32; background: white; -webkit-appearance: none; }
-.si-field input:focus { border-color: #5fb8a8; }
+.si-field input, .si-field select { width: 100%; padding: 10px; font-size: 14px; font-family: inherit; font-weight: 700; border: 2px solid #d6e7e0; border-radius: 9px; outline: none; color: #1f3a32; background: white; -webkit-appearance: none; }
+.si-field input:focus, .si-field select:focus { border-color: #5fb8a8; }
 .send-status-box { font-size: 13px; font-weight: 700; padding: 12px 14px; border-radius: 10px; margin: 4px 0 10px; line-height: 1.5; }
 .send-status-box.sending { background: #f4faf7; color: #5a7a70; border: 1.5px solid #d6e7e0; }
 .send-status-box.done { background: #dcf5e8; color: #1a5c3a; border: 1.5px solid #5fbb8a; }
@@ -127,6 +128,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             <div class="si-row">
                 <div class="si-field"><label for="si-name">이름</label><input type="text" id="si-name" placeholder="홍길동" autocomplete="off"></div>
                 <div class="si-field"><label for="si-school">학교</label><input type="text" id="si-school" placeholder="○○중 또는 ○○고" autocomplete="off"></div>
+            </div>
+            <div class="si-row">
+                <div class="si-field"><label for="si-grade">학년</label><select id="si-grade"></select></div>
+                <div class="si-field"><label for="si-phone">전화 뒷 4자리</label><input type="text" id="si-phone" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></div>
             </div>
         </div>
 
@@ -169,6 +174,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
     var week = params.get('w') || '';
 
     var GRADE_LABEL = '';
+    var GRADES = (window.VOCA && VOCA.grades) ? VOCA.grades.map(function(x){ return x.label; }) : ['중1','중2','중3','고1','고2','고3'];
     if (window.VOCA && VOCA.grades) {
         VOCA.grades.forEach(function(x) { if (x.code === gCode) GRADE_LABEL = x.label; });
     }
@@ -200,6 +206,16 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         document.title = 'SHUEGUK 어휘 ' + GRADE_LABEL + ' ' + week + '주차';
         $('total-count').textContent = TOTAL;
         $('bar-total').textContent = TOTAL;
+
+        // 학년 드롭다운: 테스트 학년을 기본 선택
+        var gradeSel = $('si-grade');
+        gradeSel.innerHTML = '';
+        GRADES.forEach(function(label) {
+            var o = document.createElement('option');
+            o.value = label; o.textContent = label;
+            if (label === GRADE_LABEL) o.selected = true;
+            gradeSel.appendChild(o);
+        });
 
         buildStudy(data.study || {});
         buildQuestions();
@@ -346,6 +362,8 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         $('tab-study').addEventListener('click', function() { setMode('study'); });
         $('tab-test').addEventListener('click', function() { setMode('test'); });
         $('submit-btn').addEventListener('click', submit);
+        // 전화 뒷 4자리: 숫자만
+        $('si-phone').addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); });
     }
 
     function setMode(m) {
@@ -368,8 +386,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         if (submitted) return;
         var sName = ($('si-name').value || '').trim();
         var sSchool = ($('si-school').value || '').trim();
-        if (!sName || !sSchool) {
-            alert('제출 전에 이름·학교를 입력해 주세요!');
+        var sGrade = $('si-grade').value || '';
+        var sPhone = ($('si-phone').value || '').trim();
+        if (!sName || !sSchool || !sGrade || !/^[0-9]{4}$/.test(sPhone)) {
+            alert('제출 전에 이름·학교·학년·전화 뒷 4자리(숫자 4자리)를 모두 입력해 주세요!');
             $('si-name').scrollIntoView({ block: 'center' });
             return;
         }
@@ -430,7 +450,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         finalEl.className = 'final show';
 
         var payload = {
-            time: nowStr(), name: sName, school: sSchool, grade: GRADE_LABEL,
+            time: nowStr(), name: sName, school: sSchool, grade: sGrade, phone4: sPhone,
             round: week, score: score + ' / ' + TOTAL, details: details.join('\n')
         };
         sendResult(payload);
