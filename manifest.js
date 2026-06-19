@@ -12,7 +12,7 @@
 */
 window.VOCA = {
   baseUrl: "https://coke4497-sys.github.io/shueguk-voca/test.html",
-  weeks: 28,
+  weeks: 30,
   grades: [
     { code: "m1", label: "중1" },
     { code: "m2", label: "중2" },
@@ -107,6 +107,8 @@ window.VOCA = {
     "m3-25": { title: "연설·설득 전략과 행동 관용구 편" },
     "m3-26": { title: "준언어·비언어 표현과 출중함 한자 성어 편" },
     "m3-27": { title: "쓰기 윤리와 실행 속담 편" },
-    "m3-28": { title: "22~27주차 종합 편" }
+    "m3-28": { title: "22~27주차 종합 편" },
+
+    "h1-1": { title: "논리(1) · 삶의 이치 편" }
   }
 };
