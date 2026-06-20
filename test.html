@@ -418,6 +418,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
                 var user = normalize(inp.value);
                 var accept = (q.answers && q.answers.length) ? q.answers : [q.answer];
                 isCorrect = !!user && accept.some(function(a) { return normalize(a) === user; });
+                if (!isCorrect && q.contains && user.indexOf(normalize(q.contains)) !== -1) isCorrect = true;
                 inp.disabled = true;
                 fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
                 if (isCorrect) {
