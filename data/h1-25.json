@@ -40,7 +40,7 @@
     ]
   },
   "questions": [
-    { "num": 1, "type": "choice", "section": "01~03 다음 뜻에 해당하는 어휘를 고르시오.", "stem": "평생 동안 한 일이나 업적.", "options": ["면적", "행적"], "answer": "2" },
+    { "num": 1, "type": "choice", "section": "01~03 다음 뜻에 해당하는 어휘를 고르시오.", "stem": "평생 동안 한 일이나 업적.", "options": ["면모", "행적"], "answer": "2" },
     { "num": 2, "type": "choice", "stem": "운동 경기, 공연, 영화 등을 보거나 듣는 사람.", "options": ["관객", "연출"], "answer": "1" },
     { "num": 3, "type": "choice", "stem": "미리 정하지 않고 그때그때 필요에 따라 정한 것.", "options": ["설정", "임시"], "answer": "2" },
     { "num": 4, "type": "ox", "section": "04~06 다음 설명이 맞으면 O, 그렇지 않으면 X를 누르시오.", "stem": "‘긴장’은 정세나 분위기가 평온하지 않은 상태를 말한다.", "answer": "O", "explanation": "‘긴장’의 여러 뜻 중 하나입니다." },
