@@ -134,7 +134,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             </div>
             <div class="si-row">
                 <div class="si-field"><label for="si-grade">학년</label><select id="si-grade"></select></div>
-                <div class="si-field"><label for="si-phone">부모님 번호 8자리<span style="font-weight:700;color:#94a3b8;"> (010 제외)</span></label><input type="text" id="si-phone" inputmode="numeric" maxlength="8" placeholder="12345678" autocomplete="off"></div>
+                <div class="si-field"><label for="si-phone">본인 전화번호 뒤 4자리</label><input type="text" id="si-phone" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></div>
             </div>
         </div>
 
@@ -373,8 +373,8 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         $('tab-study').addEventListener('click', function() { setMode('study'); });
         $('tab-test').addEventListener('click', function() { setMode('test'); });
         $('submit-btn').addEventListener('click', submit);
-        // 부모님 번호 8자리(010 제외): 숫자만
-        $('si-phone').addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8); });
+        // 본인 전화번호 뒤 4자리(동명이인 구분용): 숫자만
+        $('si-phone').addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); });
     }
 
     function setMode(m) {
@@ -399,8 +399,8 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         var sSchool = ($('si-school').value || '').trim();
         var sGrade = $('si-grade').value || '';
         var sPhone = ($('si-phone').value || '').trim();
-        if (!sName || !sSchool || !sGrade || !/^[0-9]{8}$/.test(sPhone)) {
-            alert('제출 전에 이름·학교·학년·부모님 번호 8자리(010 제외, 숫자 8자리)를 모두 입력해 주세요!');
+        if (!sName || !sSchool || !sGrade || !/^[0-9]{4}$/.test(sPhone)) {
+            alert('제출 전에 이름·학교·학년·본인 전화번호 뒤 4자리(숫자 4자리)를 모두 입력해 주세요!');
             $('si-name').scrollIntoView({ block: 'center' });
             return;
         }
