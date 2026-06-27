@@ -73,7 +73,10 @@ function doGet(e) {
   var p = (e && e.parameter) || {};
   var cb = p.callback || '';
   var payload;
-  if (p.key !== ACCESS_KEY) {
+  if (p.action === 'taken') {
+    // 학생 본인 확인용: 이름+전화4+주차가 맞는 결과가 있으면 taken:true (키 불필요, 데이터 비노출)
+    payload = checkTaken_(p.name, p.phone4, p.round);
+  } else if (p.key !== ACCESS_KEY) {
     payload = { ok: false, error: 'unauthorized' };
   } else if (p.action === 'delete') {
     payload = deleteRows_(p.ids || '');
@@ -106,6 +109,31 @@ function readRows_() {
     rows.push(obj);
   }
   return rows;
+}
+
+/* 학생 본인 응시 여부 확인 (이름+전화4+주차). 데이터는 반환하지 않고 boolean 만. */
+function checkTaken_(name, phone4, round) {
+  name = ('' + (name == null ? '' : name)).trim();
+  phone4 = ('' + (phone4 == null ? '' : phone4)).trim();
+  round = ('' + (round == null ? '' : round)).trim();
+  if (!name || !round) return { ok: true, taken: false };
+  var sh = getSheet_();
+  var values = sh.getDataRange().getValues();
+  if (values.length < 2) return { ok: true, taken: false };
+  var keys = values[0].map(canon_);
+  var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+  for (var i = 1; i < values.length; i++) {
+    var rn = ('' + (values[i][iRound] == null ? '' : values[i][iRound])).trim();
+    if (rn !== round) continue;
+    var nm = ('' + (values[i][iName] == null ? '' : values[i][iName])).trim();
+    if (nm !== name) continue;
+    if (phone4 && iPhone >= 0) {
+      var ph = ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim();
+      if (ph && ph !== phone4) continue;   // 전화4가 있으면 일치해야 함
+    }
+    return { ok: true, taken: true };
+  }
+  return { ok: true, taken: false };
 }
 
 /* 선택 행 삭제. ids = "행번호:해시,행번호:해시,..."
