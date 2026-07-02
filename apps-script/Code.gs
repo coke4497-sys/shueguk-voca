@@ -111,7 +111,10 @@ function readRows_() {
   return rows;
 }
 
-/* 학생 본인 응시 여부 확인 (이름+전화4+주차). 데이터는 반환하지 않고 boolean 만. */
+/* 학생 본인 응시 여부 확인 (이름+주차, 전화4는 보조). 데이터는 반환하지 않고 boolean 만.
+ * ※ 학생이 테스트에 입력하는 전화4(본인 번호)와 개인 페이지가 보내는 전화4(학생ID=부모님
+ *   번호 뒤 4자리)가 다를 수 있어, 전화4 불일치를 이유로 응시 기록을 버리지 않는다.
+ *   이름+주차가 일치하면 응시로 인정(전화4까지 일치하면 즉시 확정). */
 function checkTaken_(name, phone4, round) {
   name = ('' + (name == null ? '' : name)).trim();
   phone4 = ('' + (phone4 == null ? '' : phone4)).trim();
@@ -122,18 +125,21 @@ function checkTaken_(name, phone4, round) {
   if (values.length < 2) return { ok: true, taken: false };
   var keys = values[0].map(canon_);
   var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+  var nameMatch = false;
   for (var i = 1; i < values.length; i++) {
     var rn = ('' + (values[i][iRound] == null ? '' : values[i][iRound])).trim();
     if (rn !== round) continue;
     var nm = ('' + (values[i][iName] == null ? '' : values[i][iName])).trim();
     if (nm !== name) continue;
+    nameMatch = true;   // 이름+주차 일치 → 응시로 인정
     if (phone4 && iPhone >= 0) {
       var ph = ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim();
-      if (ph && ph !== phone4) continue;   // 전화4가 있으면 일치해야 함
+      if (!ph || ph === phone4) return { ok: true, taken: true };   // 전화4까지 일치 → 즉시 확정
+    } else {
+      return { ok: true, taken: true };
     }
-    return { ok: true, taken: true };
   }
-  return { ok: true, taken: false };
+  return { ok: true, taken: nameMatch };
 }
 
 /* 선택 행 삭제. ids = "행번호:해시,행번호:해시,..."
