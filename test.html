@@ -198,11 +198,31 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
     if (!gCode || !week) { fail('주소가 올바르지 않습니다. (학년·주차 정보 없음)'); return; }
 
+    /* ===== 열린 주차 확인 =====
+     * 선생님이 연 주차와 주소의 주차가 다르면 응시 차단 — 지난 주차 링크·옛 화면으로
+     * 예전 시험을 제출하는 것을 막는다. 확인 자체가 실패하면(순간 장애) 시험은 열어준다. */
+    var STATUS_URL = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec?action=vocaStatus';
+    fetch(STATUS_URL + '&t=' + Date.now(), { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(st) {
+            if (st && st.result === 'success') {
+                if (st.open === false) { fail('지금은 어휘 테스트를 운영하지 않아요.<br>선생님 안내를 기다려주세요.'); return; }
+                if (st.week >= 1 && String(st.week) !== String(week)) {
+                    fail('지금은 <b>' + st.week + '주차</b> 어휘 테스트만 응시할 수 있어요.<br>개인 페이지의 어휘 카드에서 다시 들어와 주세요.');
+                    return;
+                }
+            }
+            loadQuiz();
+        })
+        .catch(loadQuiz);
+
     /* ===== 데이터 로드 ===== */
-    fetch('data/' + gCode + '-' + week + '.json', { cache: 'no-store' })
-        .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
-        .then(function(data) { init(data); })
-        .catch(function() { fail('아직 등록되지 않은 테스트입니다. (' + esc(GRADE_LABEL || gCode) + ' ' + esc(week) + '주차)'); });
+    function loadQuiz() {
+        fetch('data/' + gCode + '-' + week + '.json', { cache: 'no-store' })
+            .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+            .then(function(data) { init(data); })
+            .catch(function() { fail('아직 등록되지 않은 테스트입니다. (' + esc(GRADE_LABEL || gCode) + ' ' + esc(week) + '주차)'); });
+    }
 
     var DATA, QUESTIONS, TOTAL, submitted = false;
 
