@@ -111,7 +111,15 @@ input[type=number] { width: 72px; }
   /* 정답지만 인쇄 */
   body.print-a .paper-head, body.print-a .range-note, body.print-a .qwrap { display: none !important; }
   body.print-a .answer-sheet { page-break-before: auto; }
-  @page { size: A4; margin: 13mm 11mm; }
+  @page {
+    size: A4;
+    margin: 13mm 11mm 17mm;
+    @bottom-center {
+      content: "- " counter(page) " / " counter(pages) " -";
+      font-size: 9pt;
+      color: #6a7d74;
+    }
+  }
 }
 @media (max-width: 720px) {
   .qwrap, .expl-list { column-count: 1; }
