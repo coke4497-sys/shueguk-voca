@@ -43,6 +43,19 @@ input[type=number] { width: 72px; }
 .hw-links.show { display: flex; }
 .hw-links a { font-size: 12px; font-weight: 800; color: #1f5a48; text-decoration: none; background: #e9f5ef; border: 2px solid #5fb8a8; border-radius: 10px; padding: 8px 14px; }
 .hw-links a svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* 최근 만든 시험 */
+.hist { border-top: 1.5px dashed #c8e4d8; margin-top: 12px; padding-top: 12px; }
+.hist-title { font-size: 13px; font-weight: 800; color: #1f5a48; margin-bottom: 8px; }
+.hist-title svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: #2d8068; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hist-title .hist-note { font-weight: 400; font-size: 11px; color: #5a7a70; }
+.hist-item { display: flex; align-items: center; gap: 8px; background: #f4faf7; border: 1.5px solid #d6e7e0; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; }
+.hist-item .h-name { font-weight: 800; color: #1f3a32; cursor: pointer; }
+.hist-item .h-name:hover { color: #2d8068; text-decoration: underline; }
+.hist-item .h-meta { color: #5a7a70; font-size: 11px; }
+.hist-item .h-hw { font-size: 10px; font-weight: 800; color: #1f5a48; background: #d4ede2; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.hist-item .h-open { margin-left: auto; font-family: inherit; font-size: 11px; font-weight: 800; color: #1f5a48; background: white; border: 1.5px solid #5fb8a8; border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+.hist-item .h-del { font-family: inherit; font-size: 12px; color: #94a3b8; background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.hist-item .h-del:hover { color: #b3362e; }
 
 /* ── 시험지 ── */
 .sheet { background: white; max-width: 210mm; margin: 14px auto 40px; padding: 14mm 12mm; box-shadow: 0 4px 20px rgba(45,128,104,0.12); }
@@ -160,6 +173,10 @@ input[type=number] { width: 72px; }
       </div>
     </div>
     <div class="status" id="status">조건을 고른 뒤 [테스트지 만들기]를 누르세요.</div>
+    <div class="hist" id="hist" style="display:none;">
+      <div class="hist-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>최근 만든 시험 <span class="hist-note">— 눌러서 같은 시험지를 다시 열고 PDF를 내려받을 수 있어요 (이 기기에 저장됨)</span></div>
+      <div id="histList"></div>
+    </div>
   </div>
 </div>
 
@@ -432,6 +449,11 @@ input[type=number] { width: 72px; }
         html += '</div>';
 
         built = { grade: grade, from: from, to: to, mode: mode, seed: seed, flat: flat };
+        built.histRec = histAdd({
+          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed,
+          expl: withExpl, qn: num, at: Date.now(),
+          title: GRADE_LABEL[grade] + ' ' + paperTitle
+        });
         $('sheet').innerHTML = html;
         $('sheet').style.display = 'block';
         $('dlRow').className = 'dl-row show';
@@ -471,6 +493,82 @@ input[type=number] { width: 72px; }
     window.print();
     /* afterprint 미지원 브라우저 대비 */
     setTimeout(restore, 2000);
+  }
+
+  /* ── 최근 만든 시험 (이 기기 localStorage) ──
+     출제 조건이 시드로 고정되어 있어, 같은 조건이면 언제든 동일한 시험지가 재생성됩니다. */
+  var HIST_KEY = 'shueguk_paper_history';
+
+  function histLoad() {
+    try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function histStore(list) {
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 15))); } catch (e) {}
+  }
+  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.mode === 'sample' ? r.seed : ''].join('|'); }
+  function histAdd(rec) {
+    var list = histLoad().filter(function (r) { return histId(r) !== histId(rec); });
+    /* 같은 조건 재생성 시 기존 기록의 H WORK 표시는 유지 */
+    var prev = histLoad().filter(function (r) { return histId(r) === histId(rec); })[0];
+    if (prev && prev.hw && !rec.hw) rec.hw = prev.hw;
+    list.unshift(rec);
+    histStore(list);
+    renderHist();
+    return rec;
+  }
+  function histMarkHw(rec, label) {
+    var list = histLoad();
+    list.forEach(function (r) { if (histId(r) === histId(rec)) r.hw = label; });
+    histStore(list);
+    renderHist();
+  }
+  function histDel(idx) {
+    var list = histLoad();
+    list.splice(idx, 1);
+    histStore(list);
+    renderHist();
+  }
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate();
+  }
+  function renderHist() {
+    var list = histLoad();
+    var box = $('hist');
+    if (!list.length) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    $('histList').innerHTML = list.map(function (r, i) {
+      var meta = r.qn + '문항 · ' + (r.mode === 'sample' ? '랜덤(출제 ' + r.seed + ')' : '전체') + ' · ' + fmtDate(r.at);
+      return '<div class="hist-item">' +
+        '<span class="h-name" data-i="' + i + '">' + esc(r.title) + '</span>' +
+        '<span class="h-meta">' + esc(meta) + '</span>' +
+        (r.hw ? '<span class="h-hw">H WORK 출제됨</span>' : '') +
+        '<button type="button" class="h-open" data-i="' + i + '">다시 열기</button>' +
+        '<button type="button" class="h-del" data-i="' + i + '" title="기록 삭제">✕</button>' +
+      '</div>';
+    }).join('');
+    $('histList').querySelectorAll('.h-open, .h-name').forEach(function (el) {
+      el.addEventListener('click', function () { histRestore(histLoad()[+el.getAttribute('data-i')]); });
+    });
+    $('histList').querySelectorAll('.h-del').forEach(function (el) {
+      el.addEventListener('click', function () { histDel(+el.getAttribute('data-i')); });
+    });
+  }
+  function histRestore(r) {
+    if (!r) return;
+    $('selGrade').value = r.g;
+    fillWeekSelects();
+    $('selFrom').value = String(r.f);
+    $('selTo').value = String(r.t);
+    $('selMode').value = r.mode;
+    var s = r.mode === 'sample';
+    $('fldCount').style.display = s ? 'flex' : 'none';
+    $('fldSeed').style.display = s ? 'flex' : 'none';
+    if (s) { $('inpCount').value = r.cnt; $('inpSeed').value = r.seed; }
+    $('chkExpl').checked = !!r.expl;
+    build();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /* ── H WORK 자동 출제 ──
@@ -515,8 +613,10 @@ input[type=number] { width: 72px; }
       .then(function (res) {
         if (res && res.ok) {
           st.className = 'status';
-          st.textContent = '✓ 출제 완료 — 학생 화면에서 [' + teacher + ' / ' + code + '] (' + built.flat.length + '문항)를 선택해 응시할 수 있습니다. 같은 제목으로 다시 출제하면 덮어씁니다.';
+          st.textContent = '✓ 출제 완료 — 학생 화면에서 [' + teacher + ' / ' + code + '] (' + built.flat.length + '문항)를 선택해 응시할 수 있습니다. ' +
+            '같은 제목으로 다시 출제하면 덮어쓰며, PDF는 아래 "최근 만든 시험"에서 언제든 다시 내려받을 수 있습니다.';
           $('hwLinks').className = 'hw-links show';
+          if (built.histRec) histMarkHw(built.histRec, teacher + ' / ' + code);
         } else {
           st.className = 'status err';
           st.textContent = '출제 실패: ' + ((res && res.error) || '서버 오류');
@@ -558,6 +658,7 @@ input[type=number] { width: 72px; }
   fillWeekSelects();
   $('selFrom').value = '1';
   $('selTo').value = '4';
+  renderHist();
 })();
 </script>
 </body>
