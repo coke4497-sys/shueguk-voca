@@ -147,6 +147,9 @@ input[type=number] { width: 72px; }
       <label class="fld" id="fldSeed" style="display:none;">출제 번호
         <input type="number" id="inpSeed" value="1" min="1" max="9999">
       </label>
+      <label class="fld" title="주차별 학습 어휘에서 초성·뜻만 제시하는 단답 문항을 만들어 시험지 끝에 추가합니다.">보기 없는 단답
+        <input type="number" id="inpExtra" value="10" min="0" max="60" step="1"> 문항 추가
+      </label>
     </div>
     <div class="tool-row">
       <label class="chk"><input type="checkbox" id="chkExpl"> 정답지에 해설 포함</label>
@@ -356,6 +359,81 @@ input[type=number] { width: 72px; }
     return esc(q.answer);
   }
 
+  /* ── 보기 없는 단답 자동 생성 ──
+     주차별 학습 어휘(study)에서 초성·뜻만 제시하는 단답 문항을 만듭니다. */
+  var CHO_LIST = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var CHO_SUFFIX = ['스럽다', '거리다', '하다', '롭다', '되다', '지다'];
+
+  function chosungOf(word) {
+    var base = word, tail = '';
+    for (var i = 0; i < CHO_SUFFIX.length; i++) {
+      var sfx = CHO_SUFFIX[i];
+      if (word.length > sfx.length && word.slice(-sfx.length) === sfx) {
+        base = word.slice(0, -sfx.length); tail = sfx; break;
+      }
+    }
+    var out = '';
+    for (var j = 0; j < base.length; j++) {
+      var c = base.charCodeAt(j);
+      out += (c >= 0xAC00 && c <= 0xD7A3) ? CHO_LIST[Math.floor((c - 0xAC00) / 588)] : base[j];
+    }
+    return out + tail;
+  }
+
+  function shortMeaning(m) {
+    /* 다의어 뜻풀이는 첫 번째 뜻만 사용 */
+    return String(m || '').replace(/^「1」\s*/, '').split(/\s*「2」/)[0].trim();
+  }
+
+  function studyPool(weekData) {
+    var study = weekData.study || {};
+    var out = [];
+    Object.keys(study).forEach(function (k) {
+      (study[k] || []).forEach(function (e) {
+        if (e && e.word && e.meaning) out.push(e);
+      });
+    });
+    return out;
+  }
+
+  /* 추가 단답 섹션 생성: 주차별 균등 배분, 본 문항과 중복 어휘 제외, 시드로 재현 */
+  function buildExtraSections(weekDatas, extra, usedWords, rnd) {
+    var pools = weekDatas.map(function (wd) {
+      var pool = studyPool(wd).filter(function (e) {
+        return !usedWords[String(e.word).replace(/\s+/g, '')];
+      });
+      /* Fisher–Yates */
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(rnd() * (i + 1));
+        var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+      }
+      return pool;
+    });
+    var want = pools.map(function () { return 0; });
+    var left = extra;
+    while (left > 0) {
+      var progressed = false;
+      for (var w = 0; w < pools.length && left > 0; w++) {
+        if (want[w] < pools[w].length) { want[w]++; left--; progressed = true; }
+      }
+      if (!progressed) break;
+    }
+    var sections = [];
+    weekDatas.forEach(function (wd, wi) {
+      if (!want[wi]) return;
+      var picked = pools[wi].slice(0, want[wi]);
+      sections.push({
+        week: wd.week, weekTitle: wd.title,
+        text: '제시된 초성과 뜻을 참고하여 어휘를 쓰시오. (보기 없음)',
+        boxki: null,
+        questions: picked.map(function (e) {
+          return { type: 'short', chosung: chosungOf(e.word), stem: shortMeaning(e.meaning), answer: e.word };
+        })
+      });
+    });
+    return sections;
+  }
+
   function build() {
     var grade = $('selGrade').value;
     var weeks = weekRange();
@@ -363,6 +441,7 @@ input[type=number] { width: 72px; }
     var mode = $('selMode').value;
     var total = Math.max(4, Math.min(200, parseInt($('inpCount').value, 10) || 32));
     var seed = parseInt($('inpSeed').value, 10) || 1;
+    var extra = Math.max(0, Math.min(60, parseInt($('inpExtra').value, 10) || 0));
     var withExpl = $('chkExpl').checked;
 
     $('status').className = 'status';
@@ -382,6 +461,22 @@ input[type=number] { width: 72px; }
         if (mode === 'sample') {
           /* 시드에 범위를 섞어 같은 번호라도 범위가 다르면 다른 조합이 나오게 함 */
           weekSections = samplePlan(weekSections, total, mulberry32((seed * 1000003 + from * 31 + to) % 2147483647));
+        }
+
+        var extraCount = 0;
+        if (extra > 0) {
+          var usedWords = {};
+          weekSections.forEach(function (sections) {
+            sections.forEach(function (sec) {
+              sec.questions.forEach(function (q) {
+                usedWords[String(q.answer || '').replace(/\s+/g, '')] = 1;
+              });
+            });
+          });
+          var extraSections = buildExtraSections(weekDatas, extra, usedWords,
+            mulberry32((seed * 2654435761 + from * 977 + to * 131 + 7) % 2147483647));
+          extraSections.forEach(function (sec) { extraCount += sec.questions.length; });
+          if (extraSections.length) weekSections.push(extraSections);
         }
 
         var num = 0;
@@ -419,7 +514,8 @@ input[type=number] { width: 72px; }
           '</div>' +
           '<div class="range-note"><b>출제 범위</b> ' + esc(titles) +
           ' &nbsp;·&nbsp; 총 ' + num + '문항' +
-          (mode === 'sample' ? ' (출제 번호 ' + seed + ')' : '') +
+          (extraCount ? ' (보기 없는 단답 ' + extraCount + '문항 포함)' : '') +
+          (mode === 'sample' || extraCount ? ' (출제 번호 ' + seed + ')' : '') +
           (missing.length ? ' &nbsp;·&nbsp; 미등록 주차 제외: ' + missing.join(', ') + '주' : '') +
           '</div>';
 
@@ -450,7 +546,7 @@ input[type=number] { width: 72px; }
 
         built = { grade: grade, from: from, to: to, mode: mode, seed: seed, flat: flat };
         built.histRec = histAdd({
-          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed,
+          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed, x: extra,
           expl: withExpl, qn: num, at: Date.now(),
           title: GRADE_LABEL[grade] + ' ' + paperTitle
         });
@@ -505,7 +601,7 @@ input[type=number] { width: 72px; }
   function histStore(list) {
     try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 15))); } catch (e) {}
   }
-  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.mode === 'sample' ? r.seed : ''].join('|'); }
+  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.seed || 1, r.x || 0].join('|'); }
   function histAdd(rec) {
     var list = histLoad().filter(function (r) { return histId(r) !== histId(rec); });
     /* 같은 조건 재생성 시 기존 기록의 H WORK 표시는 유지 */
@@ -562,11 +658,11 @@ input[type=number] { width: 72px; }
     $('selFrom').value = String(r.f);
     $('selTo').value = String(r.t);
     $('selMode').value = r.mode;
-    var s = r.mode === 'sample';
-    $('fldCount').style.display = s ? 'flex' : 'none';
-    $('fldSeed').style.display = s ? 'flex' : 'none';
-    if (s) { $('inpCount').value = r.cnt; $('inpSeed').value = r.seed; }
+    if (r.mode === 'sample') { $('inpCount').value = r.cnt; }
+    $('inpSeed').value = r.seed || 1;
+    $('inpExtra').value = r.x != null ? r.x : 0;
     $('chkExpl').checked = !!r.expl;
+    syncFields();
     build();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -646,11 +742,15 @@ input[type=number] { width: 72px; }
   $('btnHwCopy').addEventListener('click', hwCopyLink);
 
   $('selGrade').addEventListener('change', fillWeekSelects);
-  $('selMode').addEventListener('change', function () {
-    var s = this.value === 'sample';
+  function syncFields() {
+    var s = $('selMode').value === 'sample';
+    var x = (parseInt($('inpExtra').value, 10) || 0) > 0;
     $('fldCount').style.display = s ? 'flex' : 'none';
-    $('fldSeed').style.display = s ? 'flex' : 'none';
-  });
+    /* 출제 번호는 랜덤 추출 또는 보기 없는 단답이 있을 때 의미가 있음 */
+    $('fldSeed').style.display = (s || x) ? 'flex' : 'none';
+  }
+  $('selMode').addEventListener('change', syncFields);
+  $('inpExtra').addEventListener('input', syncFields);
   $('btnBuild').addEventListener('click', build);
   $('btnDlQ').addEventListener('click', function () { printPart('print-q', '문제지'); });
   $('btnDlA').addEventListener('click', function () { printPart('print-a', '정답지'); });
@@ -658,6 +758,7 @@ input[type=number] { width: 72px; }
   fillWeekSelects();
   $('selFrom').value = '1';
   $('selTo').value = '4';
+  syncFields();
   renderHist();
 })();
 </script>
