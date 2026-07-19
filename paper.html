@@ -57,6 +57,7 @@ input[type=number] { width: 72px; }
 .q .cho { display: inline-block; border: 1.2px solid #2d8068; color: #1f5a48; border-radius: 4px; padding: 0 6px; font-weight: 800; margin-right: 4px; font-size: 10.5px; }
 .q .ex { display: block; color: #4a6a5f; font-size: 10.5px; margin-top: 1.5mm; padding-left: 8px; border-left: 2px solid #cfe3da; }
 .q .blankline { display: inline-block; min-width: 22mm; border-bottom: 1.3px solid #1f3a32; height: 12px; vertical-align: -2px; }
+.q .ured { color: #c0392b; text-decoration: underline; text-decoration-color: #c0392b; text-underline-offset: 2.5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .q .writeline { display: block; margin-top: 2mm; }
 .q .writeline .lbl { font-size: 10px; color: #6a8a7f; margin-right: 4px; }
 .q .opts { margin-top: 1.5mm; }
@@ -153,6 +154,35 @@ input[type=number] { width: 72px; }
     });
   }
   function blankify(text) { return esc(text).replace(/___+/g, '<span class="blankline"></span>'); }
+
+  /* '밑줄 친 ~' 문항: 대상 표기를 빨간 글씨 + 밑줄로 표시
+     - 「어휘」 / ‘어휘’ / '어휘' → 표기 제거 후 빨간 밑줄
+     - "어휘 → 뜻" 꼴은 화살표 앞 어휘에 빨간 밑줄
+     - 밑줄 친 '이 말'/'이것' 유형은 지문 속 '이 말'/'이것'만 표시 */
+  function decorate(text, secText) {
+    var s = esc(text);
+    if ((secText || '').indexOf('밑줄') < 0) {
+      return s.replace(/___+/g, '<span class="blankline"></span>');
+    }
+    var red = function (t) { return '<span class="ured">' + t + '</span>'; };
+    if (secText.indexOf('이 말') >= 0 || secText.indexOf('이것') >= 0) {
+      s = s.replace(/‘이 말’|이 말/g, red('이 말')).replace(/‘이것’|이것/g, red('이것'));
+    } else {
+      var ai = s.indexOf('→');
+      var head = ai >= 0 ? s.slice(0, ai) : s;
+      var tail = ai >= 0 ? s.slice(ai) : '';
+      var found = false;
+      head = head.replace(/「([^」]+)」/g, function (_, w) { found = true; return red(w); });
+      head = head.replace(/‘([^’<]+)’/g, function (_, w) { found = true; return red(w); });
+      head = head.replace(/'([^'<]+)'/g, function (_, w) { found = true; return red(w); });
+      if (!found && ai >= 0) {
+        var t = head.trim();
+        if (t && t.indexOf(' ') < 0) head = head.replace(t, red(t));
+      }
+      s = head + tail;
+    }
+    return s.replace(/___+/g, '<span class="blankline"></span>');
+  }
 
   /* 시드 고정 난수 — 같은 출제 번호면 항상 같은 문제지가 나옵니다. */
   function mulberry32(a) {
@@ -256,10 +286,10 @@ input[type=number] { width: 72px; }
     });
   }
 
-  function renderQuestion(q, num) {
+  function renderQuestion(q, num, secText) {
     var h = '<div class="q"><span class="qn">' + String(num).padStart(2, '0') + '.</span>';
     if (q.chosung) h += '<span class="cho">' + esc(q.chosung) + '</span>';
-    h += blankify(q.stem);
+    h += decorate(q.stem, secText);
     if (q.example) h += '<span class="ex">' + blankify(q.example) + '</span>';
     if (q.type === 'choice' && q.options) {
       h += '<span class="opts">' + q.options.map(function (o, i) {
@@ -318,7 +348,7 @@ input[type=number] { width: 72px; }
             var body = sec.questions.map(function (q) {
               num++;
               flat.push({ num: num, q: q, week: sec.week });
-              return renderQuestion(q, num);
+              return renderQuestion(q, num, sec.text);
             }).join('');
             var range = start === num ? String(start).padStart(2, '0')
               : String(start).padStart(2, '0') + '~' + String(num).padStart(2, '0');
