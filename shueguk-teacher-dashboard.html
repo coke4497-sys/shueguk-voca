@@ -34,6 +34,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .ctrl select:focus, .ctrl input:focus { border-color: #5fb8a8; }
 .btn { padding: 9px 16px; font-size: 13px; font-weight: 800; font-family: inherit; border: none; border-radius: 9px; background: #2d8068; color: white; cursor: pointer; }
 .btn.ghost { background: white; color: #2d8068; border: 2px solid #2d8068; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .btn.danger { background: white; color: #b3261e; border: 2px solid #e7a6a0; }
 .btn.danger:hover { background: #fdeaea; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -90,6 +91,7 @@ tr.sel-on > td { background: #eef9f3; }
             <div class="ctrl"><label>이름 검색</label><input type="text" id="f-name" placeholder="이름 일부" autocomplete="off"></div>
             <button class="btn" id="btn-refresh">↻ 새로고침</button>
             <button class="btn ghost" id="btn-csv">CSV 내려받기</button>
+            <a class="btn ghost" href="paper.html" target="_blank" rel="noopener">🖨 1~4주 종합 테스트지</a>
             <button class="btn danger" id="btn-delete" disabled>🗑 선택 삭제</button>
         </div>
     </div>
