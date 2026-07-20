@@ -53,6 +53,7 @@ tr.sel-on > td { background: #eef9f3; }
 .pct.hi { background: #dcf5e8; color: #1a5c3a; }
 .pct.mid { background: #fff3d6; color: #8a5a1f; }
 .pct.lo { background: #fde8e8; color: #8a1f1f; }
+.pct.opt { background: #eef1f0; color: #6a7d74; }
 .detail-btn { padding: 5px 10px; font-size: 11px; font-weight: 800; border: 1.5px solid #5fb8a8; background: white; color: #1f5a48; border-radius: 7px; cursor: pointer; }
 .detail-row td { background: #f4faf7; white-space: normal; }
 
@@ -90,6 +91,10 @@ tr.sel-on > td { background: #eef9f3; }
 .part-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .part-chips .pc { font-size: 12px; padding: 4px 10px; border-radius: 14px; background: #fdeaea; border: 1px solid #f0cfcc; color: #8a1f1f; }
 .part-chips .pc .sc { color: #b08a8a; font-size: 10.5px; }
+.part-table th .opt-tag { display: inline-block; font-size: 10px; font-weight: 800; color: #6a7d74; background: #eef1f0; border-radius: 999px; padding: 1px 8px; margin-left: 4px; vertical-align: 1px; }
+.part-table td.p-opt .frac { color: #6a7d74; }
+.part-chips.opt .pc { background: #f2f5f4; border-color: #dde5e1; color: #5a7a70; }
+.part-chips.opt .pc .sc { color: #94a3a0; }
 </style>
 </head>
 <body>
@@ -119,7 +124,7 @@ tr.sel-on > td { background: #eef9f3; }
 
     <div class="part-card" id="part-card">
         <h2>주차별 참여율</h2>
-        <div class="part-sub">응시 학생 수(중복 제출 제거) / 재원 학생 수 — 칸을 누르면 미응시 학생이 보여요.</div>
+        <div class="part-sub">응시 학생 수(중복 제출 제거) / 재원 학생 수 — 칸을 누르면 미응시 학생이 보여요. 고3은 자율 참여라 회색으로 표시되며 참여율 색상 평가에서 제외됩니다.</div>
         <div class="part-wrap"><table class="part-table"><thead id="part-head"></thead><tbody id="part-body"></tbody></table></div>
         <div class="part-detail" id="part-detail"></div>
     </div>
@@ -354,6 +359,7 @@ tr.sel-on > td { background: #eef9f3; }
     var ROSTER_API = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec';
     var PART_ROSTER = null;   // { 학년: [{name, school}] }
     var GRADE_ORDER = ['중1','중2','중3','고1','고2','고3'];
+    var OPTIONAL_GRADES = { '고3': 1 };   // 의무 참여가 아닌 학년 — 회색 표시, 색상 평가 제외
 
     function normGrade(x){ var m = /(중|고)\D*([1-3])/.exec(String(x||'')); return m ? m[1] + m[2] : null; }
     function pnorm(x){ return String(x == null ? '' : x).replace(/\s+/g, ''); }
@@ -393,21 +399,24 @@ tr.sel-on > td { background: #eef9f3; }
 
         $('part-head').innerHTML = '<tr><th>주차</th>' + grades.map(function(g){
             var d = PART_ROSTER && PART_ROSTER[g] ? PART_ROSTER[g].length : null;
-            return '<th>' + g + (d != null ? '<br><span style="font-weight:400;font-size:10.5px;">재원 ' + d + '</span>' : '') + '</th>';
+            return '<th>' + g + (OPTIONAL_GRADES[g] ? '<span class="opt-tag">자율</span>' : '') +
+                (d != null ? '<br><span style="font-weight:400;font-size:10.5px;">재원 ' + d + '</span>' : '') + '</th>';
         }).join('') + '</tr>';
 
         $('part-body').innerHTML = rounds.map(function(rd){
             return '<tr><td class="wk-cell">' + esc(rd) + '주차</td>' + grades.map(function(g){
                 var n = Object.keys(parts[rd + '|' + g] || {}).length;
                 var d = PART_ROSTER && PART_ROSTER[g] ? PART_ROSTER[g].length : null;
+                var opt = !!OPTIONAL_GRADES[g];
                 var inner;
                 if (d){
                     var p = Math.round(n / d * 100);
-                    inner = '<span class="frac">' + n + '/' + d + '</span> <span class="pct ' + pctClass(p) + '">' + p + '%</span>';
+                    /* 자율 참여 학년은 회색 배지 — 낮아도 빨간 경고를 주지 않음 */
+                    inner = '<span class="frac">' + n + '/' + d + '</span> <span class="pct ' + (opt ? 'opt' : pctClass(p)) + '">' + p + '%</span>';
                 } else {
                     inner = '<span class="frac">' + n + '명</span>';
                 }
-                return '<td class="p-cell" data-rd="' + escAttr(rd) + '" data-g="' + g + '">' + inner + '</td>';
+                return '<td class="p-cell' + (opt ? ' p-opt' : '') + '" data-rd="' + escAttr(rd) + '" data-g="' + g + '">' + inner + '</td>';
             }).join('') + '</tr>';
         }).join('');
 
@@ -435,10 +444,11 @@ tr.sel-on > td { background: #eef9f3; }
         }
         var done = partNames[rd + '|' + g] || {};
         var todo = roster.filter(function(s){ return !done[pnorm(s.name)]; });
-        var head = '<div class="pd-head">' + esc(rd) + '주차 ' + g + ' 미응시 ' + todo.length + '명 / 재원 ' + roster.length + '명' +
-            '<span class="pd-note">이름 기준 대조 — 학생이 학년·이름을 잘못 입력하면 미응시로 보일 수 있어요.</span></div>';
+        var opt = !!OPTIONAL_GRADES[g];
+        var head = '<div class="pd-head">' + esc(rd) + '주차 ' + g + ' ' + (opt ? '미참여' : '미응시') + ' ' + todo.length + '명 / 재원 ' + roster.length + '명' +
+            '<span class="pd-note">' + (opt ? '자율 참여 학년입니다. ' : '') + '이름 기준 대조 — 학생이 학년·이름을 잘못 입력하면 미응시로 보일 수 있어요.</span></div>';
         box.innerHTML = head + (todo.length
-            ? '<div class="part-chips">' + todo.map(function(s){
+            ? '<div class="part-chips' + (opt ? ' opt' : '') + '">' + todo.map(function(s){
                 return '<span class="pc">' + esc(s.name) + ' <span class="sc">' + esc(s.school || '') + '</span></span>';
               }).join('') + '</div>'
             : '<p class="muted">모두 응시했어요. 👏</p>');
