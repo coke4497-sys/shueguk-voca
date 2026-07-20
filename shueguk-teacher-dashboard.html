@@ -69,6 +69,27 @@ tr.sel-on > td { background: #eef9f3; }
 .status.fail { background: #fde8e8; color: #8a1f1f; border: 1.5px solid #f08a8a; }
 .muted { color: #94a3b8; font-size: 12px; }
 .row-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+/* 주차별 참여율 */
+.part-card { background: white; border: 2px solid #c8e4d8; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; display: none; }
+.part-card h2 { font-size: 14px; font-weight: 800; color: #1f5a48; margin-bottom: 2px; }
+.part-card .part-sub { font-size: 11.5px; color: #5a7a70; margin-bottom: 10px; }
+.part-wrap { overflow-x: auto; }
+.part-table { border-collapse: collapse; font-size: 12.5px; min-width: 560px; width: 100%; }
+.part-table th, .part-table td { border: 1px solid #ecf5f0; padding: 8px 10px; text-align: center; white-space: nowrap; }
+.part-table th { background: #e9f5ef; color: #1f5a48; font-weight: 800; font-size: 12px; }
+.part-table td.wk-cell { font-weight: 800; background: #f7fbf9; }
+.part-table td.p-cell { cursor: pointer; }
+.part-table td.p-cell:hover { background: #f4faf7; }
+.part-table td.p-cell.p-on { outline: 2px solid #5fb8a8; outline-offset: -2px; background: #eef9f3; }
+.part-table .frac { font-weight: 800; color: #1f3a32; }
+.part-detail { margin-top: 10px; display: none; }
+.part-detail.show { display: block; }
+.part-detail .pd-head { font-size: 12px; font-weight: 800; color: #1f5a48; margin-bottom: 6px; }
+.part-detail .pd-note { font-weight: 400; color: #94a3b8; font-size: 11px; margin-left: 6px; }
+.part-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.part-chips .pc { font-size: 12px; padding: 4px 10px; border-radius: 14px; background: #fdeaea; border: 1px solid #f0cfcc; color: #8a1f1f; }
+.part-chips .pc .sc { color: #b08a8a; font-size: 10.5px; }
 </style>
 </head>
 <body>
@@ -94,6 +115,13 @@ tr.sel-on > td { background: #eef9f3; }
             <a class="btn ghost" href="paper.html" target="_blank" rel="noopener">🖨 종합 문제 출제</a>
             <button class="btn danger" id="btn-delete" disabled>🗑 선택 삭제</button>
         </div>
+    </div>
+
+    <div class="part-card" id="part-card">
+        <h2>주차별 참여율</h2>
+        <div class="part-sub">응시 학생 수(중복 제출 제거) / 재원 학생 수 — 칸을 누르면 미응시 학생이 보여요.</div>
+        <div class="part-wrap"><table class="part-table"><thead id="part-head"></thead><tbody id="part-body"></tbody></table></div>
+        <div class="part-detail" id="part-detail"></div>
     </div>
 
     <div id="status" class="status loading">결과를 불러오는 중…</div>
@@ -142,6 +170,7 @@ tr.sel-on > td { background: #eef9f3; }
             ALL = (resp.rows || []).map(normalizeRow);
             pruneSelection();
             buildFilters(); applyFilters();
+            renderParticipation();
         };
         var s = document.createElement('script');
         s.id = cb + '_s';
@@ -321,6 +350,101 @@ tr.sel-on > td { background: #eef9f3; }
 
     function showStatus(type, msg){ var el = $('status'); el.style.display = 'block'; el.className = 'status ' + type; el.textContent = msg; if (type !== 'loading') $('table-wrap').style.display = 'none'; }
 
+    /* ===== 주차별 참여율 (전체 데이터 기준 — 위 필터와 무관) ===== */
+    var ROSTER_API = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec';
+    var PART_ROSTER = null;   // { 학년: [{name, school}] }
+    var GRADE_ORDER = ['중1','중2','중3','고1','고2','고3'];
+
+    function normGrade(x){ var m = /(중|고)\D*([1-3])/.exec(String(x||'')); return m ? m[1] + m[2] : null; }
+    function pnorm(x){ return String(x == null ? '' : x).replace(/\s+/g, ''); }
+
+    function loadPartRoster(){
+        fetch(ROSTER_API + '?action=roster&t=' + Date.now(), { cache:'no-store' })
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+                if (!d || d.result !== 'success') return;
+                PART_ROSTER = {};
+                (d.students || []).forEach(function(s){
+                    var g = normGrade(s.grade); if (!g) return;
+                    (PART_ROSTER[g] = PART_ROSTER[g] || []).push({ name: s.name, school: s.school });
+                });
+                renderParticipation();
+            }).catch(function(){});
+    }
+
+    function renderParticipation(){
+        var card = $('part-card');
+        if (!ALL.length){ card.style.display = 'none'; return; }
+        var parts = {}, partNames = {};
+        ALL.forEach(function(r){
+            var g = normGrade(r.grade); if (!g || !r.round) return;
+            var k = r.round + '|' + g;
+            (parts[k] = parts[k] || {})[r.name + '|' + r.phone4] = 1;
+            (partNames[k] = partNames[k] || {})[pnorm(r.name)] = 1;
+        });
+        var rounds = uniq(ALL.map(function(r){ return r.round; })).filter(Boolean)
+            .sort(function(a,b){ return parseFloat(a) - parseFloat(b); });
+        var grades = GRADE_ORDER.filter(function(g){
+            var hasRoster = PART_ROSTER && PART_ROSTER[g] && PART_ROSTER[g].length;
+            var hasSub = rounds.some(function(rd){ return parts[rd + '|' + g]; });
+            return hasRoster || hasSub;
+        });
+        if (!rounds.length || !grades.length){ card.style.display = 'none'; return; }
+
+        $('part-head').innerHTML = '<tr><th>주차</th>' + grades.map(function(g){
+            var d = PART_ROSTER && PART_ROSTER[g] ? PART_ROSTER[g].length : null;
+            return '<th>' + g + (d != null ? '<br><span style="font-weight:400;font-size:10.5px;">재원 ' + d + '</span>' : '') + '</th>';
+        }).join('') + '</tr>';
+
+        $('part-body').innerHTML = rounds.map(function(rd){
+            return '<tr><td class="wk-cell">' + esc(rd) + '주차</td>' + grades.map(function(g){
+                var n = Object.keys(parts[rd + '|' + g] || {}).length;
+                var d = PART_ROSTER && PART_ROSTER[g] ? PART_ROSTER[g].length : null;
+                var inner;
+                if (d){
+                    var p = Math.round(n / d * 100);
+                    inner = '<span class="frac">' + n + '/' + d + '</span> <span class="pct ' + pctClass(p) + '">' + p + '%</span>';
+                } else {
+                    inner = '<span class="frac">' + n + '명</span>';
+                }
+                return '<td class="p-cell" data-rd="' + escAttr(rd) + '" data-g="' + g + '">' + inner + '</td>';
+            }).join('') + '</tr>';
+        }).join('');
+
+        card.style.display = 'block';
+        $('part-detail').className = 'part-detail';
+        $('part-detail').innerHTML = '';
+
+        $('part-body').querySelectorAll('.p-cell').forEach(function(td){
+            td.addEventListener('click', function(){
+                var on = td.classList.contains('p-on');
+                $('part-body').querySelectorAll('.p-cell').forEach(function(x){ x.classList.remove('p-on'); });
+                if (on){ $('part-detail').className = 'part-detail'; return; }
+                td.classList.add('p-on');
+                showPartDetail(td.getAttribute('data-rd'), td.getAttribute('data-g'), partNames);
+            });
+        });
+    }
+
+    function showPartDetail(rd, g, partNames){
+        var box = $('part-detail');
+        var roster = (PART_ROSTER && PART_ROSTER[g]) || [];
+        if (!roster.length){
+            box.innerHTML = '<div class="pd-head">' + esc(rd) + '주차 ' + g + '<span class="pd-note">재원 명단이 없어 미응시자를 계산할 수 없어요.</span></div>';
+            box.className = 'part-detail show'; return;
+        }
+        var done = partNames[rd + '|' + g] || {};
+        var todo = roster.filter(function(s){ return !done[pnorm(s.name)]; });
+        var head = '<div class="pd-head">' + esc(rd) + '주차 ' + g + ' 미응시 ' + todo.length + '명 / 재원 ' + roster.length + '명' +
+            '<span class="pd-note">이름 기준 대조 — 학생이 학년·이름을 잘못 입력하면 미응시로 보일 수 있어요.</span></div>';
+        box.innerHTML = head + (todo.length
+            ? '<div class="part-chips">' + todo.map(function(s){
+                return '<span class="pc">' + esc(s.name) + ' <span class="sc">' + esc(s.school || '') + '</span></span>';
+              }).join('') + '</div>'
+            : '<p class="muted">모두 응시했어요. 👏</p>');
+        box.className = 'part-detail show';
+    }
+
     /* ===== CSV ===== */
     function toCSV(rows){
         var head = ['제출시각','이름','학교','학년','전화4','주차','점수','정답률','상세'];
@@ -349,6 +473,7 @@ tr.sel-on > td { background: #eef9f3; }
         applyFilters();
     });
     loadData();
+    loadPartRoster();
 })();
 </script>
 </body>
