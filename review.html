@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHUEGUK 어휘 복습</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%); min-height: 100vh; padding: 14px; padding-bottom: 60px; color: #1f3a32; -webkit-text-size-adjust: 100%; }
+.container { max-width: 580px; margin: 0 auto; }
+
+.header { text-align: center; margin-bottom: 12px; padding: 18px 16px 14px; background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(45,128,104,0.08); border: 2px solid #c8e4d8; }
+.header .logo { font-family: 'Nanum Myeongjo', serif; font-size: 11px; font-weight: 800; letter-spacing: 5px; color: #5fb8a8; margin-bottom: 6px; }
+.header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 21px; font-weight: 800; color: #1f5a48; letter-spacing: -0.5px; }
+.header .sub { font-size: 12px; color: #5a7a70; margin-top: 6px; line-height: 1.6; }
+
+.grade-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
+.g-btn { padding: 10px 2px; background: white; border: 1.5px solid #d6e7e0; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 800; color: #5a7a70; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.g-btn.active { background: #2d8068; border-color: #2d8068; color: white; }
+
+.week-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.w-btn { padding: 8px 14px; background: white; border: 1.5px solid #d6e7e0; border-radius: 999px; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #5a7a70; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.w-btn.active { background: #e9f5ef; border-color: #5fb8a8; color: #1f5a48; }
+
+.tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.week-title { font-size: 13px; font-weight: 800; color: #1f5a48; }
+.hide-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #1f5a48; background: white; border: 1.5px solid #5fb8a8; border-radius: 999px; padding: 8px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hide-toggle.on { background: #2d8068; border-color: #2d8068; color: white; }
+
+.section-label { font-size: 12px; font-weight: 800; color: #1f5a48; background: #d4ede2; padding: 8px 12px; border-radius: 8px; margin: 14px 0 8px; }
+
+.vcard { background: white; border-radius: 16px; padding: 16px 16px 14px; border: 2px solid #ecf5f0; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(45,128,104,0.04); }
+.vcard .word { font-family: 'Nanum Myeongjo', serif; font-size: 20px; font-weight: 800; color: #1f3a32; }
+.vcard .hanja { font-size: 12px; color: #2d8068; margin-top: 2px; font-family: 'Nanum Myeongjo', serif; }
+.vcard .meaning { font-size: 13px; line-height: 1.7; background: #e9f5ef; padding: 10px 12px; border-radius: 10px; border-left: 3px solid #5fb8a8; margin-top: 10px; }
+.vcard .example { font-size: 12px; line-height: 1.6; color: #5a7a70; padding: 8px 11px; background: #f4faf7; border-radius: 8px; font-style: italic; margin-top: 8px; }
+.vcard .example b { font-style: normal; font-weight: 800; color: #2d8068; margin-right: 6px; }
+
+/* 뜻 가리기 모드 */
+body.hide-mode .vcard { cursor: pointer; }
+body.hide-mode .vcard:not(.revealed) .meaning,
+body.hide-mode .vcard:not(.revealed) .example { display: none; }
+body.hide-mode .vcard:not(.revealed)::after { content: '눌러서 뜻 확인'; display: block; margin-top: 10px; font-size: 11px; font-weight: 800; color: #94a3b8; background: #f4faf7; border: 1.5px dashed #d6e7e0; border-radius: 8px; padding: 9px; text-align: center; }
+
+.msg { text-align: center; padding: 28px 16px; background: white; border: 2px solid #ecf5f0; border-radius: 16px; font-size: 13px; color: #5a7a70; line-height: 1.7; }
+.msg.err { color: #8a1f1f; border-color: #f0cfcc; }
+.retry { margin-top: 10px; font-family: inherit; font-size: 13px; font-weight: 800; background: #2d8068; color: white; border: none; border-radius: 9px; padding: 10px 18px; cursor: pointer; }
+.footer-note { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">SHUEGUK</div>
+    <h1>어휘 복습</h1>
+    <div class="sub">지금까지 배운 주차의 어휘를 다시 볼 수 있어요.<br>"뜻 가리기"를 켜면 스스로 테스트해 볼 수 있어요.</div>
+  </div>
+
+  <div class="grade-tabs" id="grades"></div>
+  <div class="week-tabs" id="weeks"></div>
+
+  <div class="tools" id="tools" style="display:none;">
+    <span class="week-title" id="weekTitle"></span>
+    <span class="hide-toggle" id="hideToggle">👁 뜻 가리기</span>
+  </div>
+
+  <div id="content"><div class="msg">학년을 선택해 주세요.</div></div>
+  <div class="footer-note">이수경국어 Shueguk · 어휘 복습</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var GRADES = [
+    { code: 'm1', label: '중1' }, { code: 'm2', label: '중2' }, { code: 'm3', label: '중3' },
+    { code: 'h1', label: '고1' }, { code: 'h2', label: '고2' }, { code: 'h3', label: '고3' }
+  ];
+  var CAT_LABEL = { vocab: '어휘', concept: '개념어', idiom: '한자 성어 · 관용구' };
+  var STATUS_URL = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec?action=vocaStatus';
+
+  var openWeek = null;   // 지금 열린 주차 — 이 주차까지만 복습 허용 (미래 주차 미리 보기 방지)
+  var curGrade = null, curWeek = null;
+  var cache = {};
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  /* ── 학년 탭 ── */
+  var gWrap = $('grades');
+  GRADES.forEach(function (g) {
+    var b = document.createElement('button');
+    b.className = 'g-btn';
+    b.textContent = g.label;
+    b.addEventListener('click', function () { selectGrade(g.code); });
+    b.setAttribute('data-code', g.code);
+    gWrap.appendChild(b);
+  });
+
+  function selectGrade(code) {
+    curGrade = code;
+    gWrap.querySelectorAll('.g-btn').forEach(function (b) {
+      b.className = 'g-btn' + (b.getAttribute('data-code') === code ? ' active' : '');
+    });
+    renderWeeks();
+  }
+
+  /* ── 주차 탭 (열린 주차까지만) ── */
+  function renderWeeks() {
+    var wrap = $('weeks');
+    wrap.innerHTML = '';
+    if (!curGrade || !openWeek) return;
+    for (var w = 1; w <= openWeek; w++) {
+      (function (w) {
+        var b = document.createElement('button');
+        b.className = 'w-btn';
+        b.textContent = w + '주차';
+        b.addEventListener('click', function () { selectWeek(w); });
+        b.setAttribute('data-w', w);
+        wrap.appendChild(b);
+      })(w);
+    }
+    selectWeek(Math.min(curWeek || 1, openWeek));
+  }
+
+  function selectWeek(w) {
+    curWeek = w;
+    $('weeks').querySelectorAll('.w-btn').forEach(function (b) {
+      b.className = 'w-btn' + (+b.getAttribute('data-w') === w ? ' active' : '');
+    });
+    loadStudy();
+  }
+
+  /* ── 데이터 ── */
+  function loadStudy() {
+    var key = curGrade + '-' + curWeek;
+    $('content').innerHTML = '<div class="msg">불러오는 중…</div>';
+    $('tools').style.display = 'none';
+    var p = cache[key] ? Promise.resolve(cache[key])
+      : fetch('data/' + key + '.json', { cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error('404'); return r.json(); })
+          .then(function (d) { cache[key] = d; return d; });
+    p.then(renderStudy).catch(function () {
+      $('content').innerHTML = '<div class="msg">이 주차는 아직 등록되지 않았어요.</div>';
+    });
+  }
+
+  function renderStudy(d) {
+    if (d.grade !== undefined) { /* 제목 */ }
+    $('tools').style.display = 'flex';
+    $('weekTitle').textContent = d.week + '주차 · ' + (d.title || '');
+    var study = d.study || {};
+    var html = '';
+    var count = 0;
+    Object.keys(study).forEach(function (k) {
+      var list = study[k] || [];
+      if (!list.length) return;
+      html += '<div class="section-label">' + esc(CAT_LABEL[k] || k) + ' (' + list.length + ')</div>';
+      list.forEach(function (e) {
+        count++;
+        html += '<div class="vcard">' +
+          '<div class="word">' + esc(e.word) + '</div>' +
+          (e.hanja ? '<div class="hanja">' + esc(e.hanja) + '</div>' : '') +
+          '<div class="meaning">' + esc(e.meaning) + '</div>' +
+          (e.example ? '<div class="example"><b>예</b>' + esc(e.example) + '</div>' : '') +
+        '</div>';
+      });
+    });
+    $('content').innerHTML = count ? html : '<div class="msg">이 주차에는 등록된 학습 어휘가 없어요.</div>';
+    bindCards();
+  }
+
+  /* ── 뜻 가리기 ── */
+  $('hideToggle').addEventListener('click', function () {
+    var on = document.body.classList.toggle('hide-mode');
+    this.className = 'hide-toggle' + (on ? ' on' : '');
+    this.textContent = on ? '🙈 뜻 가리는 중' : '👁 뜻 가리기';
+    document.querySelectorAll('.vcard').forEach(function (c) { c.classList.remove('revealed'); });
+  });
+  function bindCards() {
+    document.querySelectorAll('.vcard').forEach(function (c) {
+      c.addEventListener('click', function () {
+        if (document.body.classList.contains('hide-mode')) c.classList.toggle('revealed');
+      });
+    });
+  }
+
+  /* ── 시작: 열린 주차 확인 ── */
+  function init() {
+    $('content').innerHTML = '<div class="msg">주차 정보를 불러오는 중…</div>';
+    fetch(STATUS_URL + '&t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (st) {
+        if (st && st.result === 'success' && st.week >= 1) {
+          openWeek = st.week;
+          $('content').innerHTML = '<div class="msg">학년을 선택해 주세요.</div>';
+          var qs = new URLSearchParams(location.search);
+          var g = qs.get('g');
+          if (g && GRADES.some(function (x) { return x.code === g; })) selectGrade(g);
+        } else {
+          showInitError();
+        }
+      })
+      .catch(showInitError);
+  }
+  function showInitError() {
+    $('content').innerHTML = '<div class="msg err">주차 정보를 불러오지 못했어요.<br>잠시 후 다시 시도해 주세요.<br><button class="retry" onclick="location.reload()">다시 시도</button></div>';
+  }
+  init();
+})();
+</script>
+</body>
+</html>
