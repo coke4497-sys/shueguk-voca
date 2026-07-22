@@ -183,6 +183,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
     var params = new URLSearchParams(location.search);
     var gCode = params.get('g') || '';
     var week = params.get('w') || '';
+    var preview = params.get('preview') === '1';   // 티쳐스 미리보기 — 열린 주차 확인 생략
 
     var GRADE_LABEL = '';
     var GRADES = (window.VOCA && VOCA.grades) ? VOCA.grades.map(function(x){ return x.label; }) : ['중1','중2','중3','고1','고2','고3'];
@@ -200,21 +201,26 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
     /* ===== 열린 주차 확인 =====
      * 선생님이 연 주차와 주소의 주차가 다르면 응시 차단 — 지난 주차 링크·옛 화면으로
-     * 예전 시험을 제출하는 것을 막는다. 확인 자체가 실패하면(순간 장애) 시험은 열어준다. */
+     * 예전 시험을 제출하는 것을 막는다. 확인 자체가 실패하면(순간 장애) 시험은 열어준다.
+     * 티쳐스 미리보기(preview=1)는 모든 주차를 봐야 하므로 확인을 건너뛴다. */
     var STATUS_URL = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec?action=vocaStatus';
-    fetch(STATUS_URL + '&t=' + Date.now(), { cache: 'no-store' })
-        .then(function(r) { return r.json(); })
-        .then(function(st) {
-            if (st && st.result === 'success') {
-                if (st.open === false) { fail('지금은 어휘 테스트를 운영하지 않아요.<br>선생님 안내를 기다려주세요.'); return; }
-                if (st.week >= 1 && String(st.week) !== String(week)) {
-                    fail('지금은 <b>' + st.week + '주차</b> 어휘 테스트만 응시할 수 있어요.<br>개인 페이지의 어휘 카드에서 다시 들어와 주세요.');
-                    return;
+    if (preview) {
+        loadQuiz();
+    } else {
+        fetch(STATUS_URL + '&t=' + Date.now(), { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+                if (st && st.result === 'success') {
+                    if (st.open === false) { fail('지금은 어휘 테스트를 운영하지 않아요.<br>선생님 안내를 기다려주세요.'); return; }
+                    if (st.week >= 1 && String(st.week) !== String(week)) {
+                        fail('지금은 <b>' + st.week + '주차</b> 어휘 테스트만 응시할 수 있어요.<br>개인 페이지의 어휘 카드에서 다시 들어와 주세요.');
+                        return;
+                    }
                 }
-            }
-            loadQuiz();
-        })
-        .catch(loadQuiz);
+                loadQuiz();
+            })
+            .catch(loadQuiz);
+    }
 
     /* ===== 데이터 로드 ===== */
     function loadQuiz() {
