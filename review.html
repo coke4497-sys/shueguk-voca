@@ -7,46 +7,46 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(180deg, #f0faf6 0%, #e8f4ef 100%); min-height: 100vh; padding: 14px; padding-bottom: 60px; color: #1f3a32; -webkit-text-size-adjust: 100%; }
+body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: #C6D5D2; min-height: 100vh; padding: 14px; padding-bottom: 60px; color: #2C2F2D; -webkit-text-size-adjust: 100%; }
 .container { max-width: 580px; margin: 0 auto; }
 
-.header { text-align: center; margin-bottom: 12px; padding: 18px 16px 14px; background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(45,128,104,0.08); border: 2px solid #c8e4d8; }
-.header .logo { font-family: 'Gowun Batang', serif; font-size: 11px; font-weight: 800; letter-spacing: 5px; color: #5fb8a8; margin-bottom: 6px; }
-.header h1 { font-family: 'Gowun Batang', serif; font-size: 21px; font-weight: 800; color: #1f5a48; letter-spacing: -0.5px; }
-.header .sub { font-size: 12px; color: #5a7a70; margin-top: 6px; line-height: 1.6; }
+.header { text-align: center; margin-bottom: 12px; padding: 18px 16px 14px; background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(45,128,104,0.08); border: 2px solid #C6D5D2; }
+.header .logo { font-family: 'Gowun Batang', serif; font-size: 11px; font-weight: 800; letter-spacing: 5px; color: #A6C1BB; margin-bottom: 6px; }
+.header h1 { font-family: 'Gowun Batang', serif; font-size: 21px; font-weight: 800; color: #3A544E; letter-spacing: -0.5px; }
+.header .sub { font-size: 12px; color: #6A716C; margin-top: 6px; line-height: 1.6; }
 
 .grade-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
-.g-btn { padding: 10px 2px; background: white; border: 1.5px solid #d6e7e0; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 800; color: #5a7a70; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.g-btn.active { background: #2d8068; border-color: #2d8068; color: white; }
+.g-btn { padding: 10px 2px; background: white; border: 1.5px solid #E8EAE7; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 800; color: #6A716C; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.g-btn.active { background: #628C83; border-color: #628C83; color: white; }
 
 .week-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.w-btn { padding: 8px 14px; background: white; border: 1.5px solid #d6e7e0; border-radius: 999px; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #5a7a70; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.w-btn.active { background: #e9f5ef; border-color: #5fb8a8; color: #1f5a48; }
+.w-btn { padding: 8px 14px; background: white; border: 1.5px solid #E8EAE7; border-radius: 999px; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #6A716C; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.w-btn.active { background: #E9F0EF; border-color: #A6C1BB; color: #3A544E; }
 
 .tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-.week-title { font-size: 13px; font-weight: 800; color: #1f5a48; }
-.hide-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #1f5a48; background: white; border: 1.5px solid #5fb8a8; border-radius: 999px; padding: 8px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
-.hide-toggle.on { background: #2d8068; border-color: #2d8068; color: white; }
+.week-title { font-size: 13px; font-weight: 800; color: #3A544E; }
+.hide-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #3A544E; background: white; border: 1.5px solid #A6C1BB; border-radius: 999px; padding: 8px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hide-toggle.on { background: #628C83; border-color: #628C83; color: white; }
 
-.section-label { font-size: 12px; font-weight: 800; color: #1f5a48; background: #d4ede2; padding: 8px 12px; border-radius: 8px; margin: 14px 0 8px; }
+.section-label { font-size: 12px; font-weight: 800; color: #3A544E; background: #E0EAE7; padding: 8px 12px; border-radius: 8px; margin: 14px 0 8px; }
 
-.vcard { background: white; border-radius: 16px; padding: 16px 16px 14px; border: 2px solid #ecf5f0; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(45,128,104,0.04); }
-.vcard .word { font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 800; color: #1f3a32; }
-.vcard .hanja { font-size: 12px; color: #2d8068; margin-top: 2px; font-family: 'Gowun Batang', serif; }
-.vcard .meaning { font-size: 13px; line-height: 1.7; background: #e9f5ef; padding: 10px 12px; border-radius: 10px; border-left: 3px solid #5fb8a8; margin-top: 10px; }
-.vcard .example { font-size: 12px; line-height: 1.6; color: #5a7a70; padding: 8px 11px; background: #f4faf7; border-radius: 8px; font-style: italic; margin-top: 8px; }
-.vcard .example b { font-style: normal; font-weight: 800; color: #2d8068; margin-right: 6px; }
+.vcard { background: white; border-radius: 16px; padding: 16px 16px 14px; border: 2px solid #F1F6F4; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(45,128,104,0.04); }
+.vcard .word { font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 800; color: #2C2F2D; }
+.vcard .hanja { font-size: 12px; color: #628C83; margin-top: 2px; font-family: 'Gowun Batang', serif; }
+.vcard .meaning { font-size: 13px; line-height: 1.7; background: #E9F0EF; padding: 10px 12px; border-radius: 10px; margin-top: 10px; }
+.vcard .example { font-size: 12px; line-height: 1.6; color: #6A716C; padding: 8px 11px; background: #F4F5F3; border-radius: 8px; font-style: italic; margin-top: 8px; }
+.vcard .example b { font-style: normal; font-weight: 800; color: #628C83; margin-right: 6px; }
 
 /* 뜻 가리기 모드 */
 body.hide-mode .vcard { cursor: pointer; }
 body.hide-mode .vcard:not(.revealed) .meaning,
 body.hide-mode .vcard:not(.revealed) .example { display: none; }
-body.hide-mode .vcard:not(.revealed)::after { content: '눌러서 뜻 확인'; display: block; margin-top: 10px; font-size: 11px; font-weight: 800; color: #94a3b8; background: #f4faf7; border: 1.5px dashed #d6e7e0; border-radius: 8px; padding: 9px; text-align: center; }
+body.hide-mode .vcard:not(.revealed)::after { content: '눌러서 뜻 확인'; display: block; margin-top: 10px; font-size: 11px; font-weight: 800; color: #8B928C; background: #F4F5F3; border: 1.5px dashed #E8EAE7; border-radius: 8px; padding: 9px; text-align: center; }
 
-.msg { text-align: center; padding: 28px 16px; background: white; border: 2px solid #ecf5f0; border-radius: 16px; font-size: 13px; color: #5a7a70; line-height: 1.7; }
-.msg.err { color: #8a1f1f; border-color: #f0cfcc; }
-.retry { margin-top: 10px; font-family: inherit; font-size: 13px; font-weight: 800; background: #2d8068; color: white; border: none; border-radius: 9px; padding: 10px 18px; cursor: pointer; }
-.footer-note { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; line-height: 1.7; }
+.msg { text-align: center; padding: 28px 16px; background: white; border: 2px solid #F1F6F4; border-radius: 16px; font-size: 13px; color: #6A716C; line-height: 1.7; }
+.msg.err { color: #992F20; border-color: #FADED9; }
+.retry { margin-top: 10px; font-family: inherit; font-size: 13px; font-weight: 800; background: #628C83; color: white; border: none; border-radius: 9px; padding: 10px 18px; cursor: pointer; }
+.footer-note { text-align: center; font-size: 11px; color: #8B928C; margin-top: 20px; line-height: 1.7; }
 </style>
 </head>
 <body>
