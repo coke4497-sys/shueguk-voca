@@ -117,8 +117,8 @@ tr.sel-on > td { background: #eef9f3; }
             <div class="ctrl"><label>이름 검색</label><input type="text" id="f-name" placeholder="이름 일부" autocomplete="off"></div>
             <button class="btn" id="btn-refresh">↻ 새로고침</button>
             <button class="btn ghost" id="btn-csv">CSV 내려받기</button>
-            <a class="btn ghost" href="paper.html" target="_blank" rel="noopener">🖨 종합 문제 출제</a>
-            <button class="btn danger" id="btn-delete" disabled>🗑 선택 삭제</button>
+            <a class="btn ghost" href="paper.html" target="_blank" rel="noopener">종합 문제 출제</a>
+            <button class="btn danger" id="btn-delete" disabled>선택 삭제</button>
         </div>
     </div>
 
@@ -165,11 +165,11 @@ tr.sel-on > td { background: #eef9f3; }
         showStatus('loading', '결과를 불러오는 중…');
         var cb = 'shueguk_cb_' + Date.now();
         var done = false;
-        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '⚠️ 응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, 12000);
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, 12000);
         window[cb] = function(resp){
             if (done) return; done = true; clearTimeout(timer); cleanup();
             if (!resp || resp.ok !== true){
-                showStatus('fail', '⚠️ ' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '데이터를 가져오지 못했습니다.'));
+                showStatus('fail', '' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '데이터를 가져오지 못했습니다.'));
                 return;
             }
             ALL = (resp.rows || []).map(normalizeRow);
@@ -180,7 +180,7 @@ tr.sel-on > td { background: #eef9f3; }
         var s = document.createElement('script');
         s.id = cb + '_s';
         s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&t=' + Date.now();
-        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '⚠️ 스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
+        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
         document.body.appendChild(s);
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
@@ -190,19 +190,19 @@ tr.sel-on > td { background: #eef9f3; }
         var ids = Object.keys(selected);
         if (!ids.length){ return; }
         if (!confirm('선택한 ' + ids.length + '건을 삭제할까요?\n삭제한 데이터는 되돌릴 수 없습니다.')) return;
-        showStatus('loading', '🗑 ' + ids.length + '건 삭제 중…');
+        showStatus('loading', '' + ids.length + '건 삭제 중…');
         $('btn-delete').disabled = true;
         var cb = 'shueguk_del_' + Date.now();
         var done = false;
-        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '⚠️ 삭제 응답이 없습니다. 배포(새 버전)와 URL을 확인하세요.'); } }, 15000);
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '삭제 응답이 없습니다. 배포(새 버전)와 URL을 확인하세요.'); } }, 15000);
         window[cb] = function(resp){
             if (done) return; done = true; clearTimeout(timer); cleanup();
             if (!resp || resp.ok !== true){
-                showStatus('fail', '⚠️ ' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '삭제하지 못했습니다. Apps Script를 새 버전으로 재배포했는지 확인하세요.'));
+                showStatus('fail', '' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '삭제하지 못했습니다. Apps Script를 새 버전으로 재배포했는지 확인하세요.'));
                 return;
             }
             selected = {};
-            var msg = '✅ ' + (resp.deleted||0) + '건 삭제됨';
+            var msg = '' + (resp.deleted||0) + '건 삭제됨';
             if (resp.skipped) msg += ' · ' + resp.skipped + '건은 변경되어 건너뜀';
             showStatus('loading', msg + ' — 새로고침 중…');
             loadData();
@@ -210,7 +210,7 @@ tr.sel-on > td { background: #eef9f3; }
         var s = document.createElement('script');
         s.id = cb + '_s';
         s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&action=delete&ids=' + encodeURIComponent(ids.join(',')) + '&t=' + Date.now();
-        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '⚠️ 삭제 요청을 보내지 못했습니다. URL을 확인하세요.'); } };
+        s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '삭제 요청을 보내지 못했습니다. URL을 확인하세요.'); } };
         document.body.appendChild(s);
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
@@ -344,7 +344,7 @@ tr.sel-on > td { background: #eef9f3; }
         var n = selCount();
         var del = $('btn-delete');
         del.disabled = (n === 0);
-        del.textContent = n ? ('🗑 선택 삭제 (' + n + ')') : '🗑 선택 삭제';
+        del.textContent = n ? ('선택 삭제 (' + n + ')') : '선택 삭제';
         var visIds = VIEW.map(rowId);
         var allOn = visIds.length > 0 && visIds.every(function(id){ return selected[id]; });
         var chkAll = $('chk-all'); if (chkAll) chkAll.checked = allOn;
@@ -451,7 +451,7 @@ tr.sel-on > td { background: #eef9f3; }
             ? '<div class="part-chips' + (opt ? ' opt' : '') + '">' + todo.map(function(s){
                 return '<span class="pc">' + esc(s.name) + ' <span class="sc">' + esc(s.school || '') + '</span></span>';
               }).join('') + '</div>'
-            : '<p class="muted">모두 응시했어요. 👏</p>');
+            : '<p class="muted">모두 응시했어요.</p>');
         box.className = 'part-detail show';
     }
 
