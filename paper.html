@@ -7,96 +7,96 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: #e8f4ef; color: #1f3a32; -webkit-text-size-adjust: 100%; }
+body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif; background: #C6D5D2; color: #2C2F2D; -webkit-text-size-adjust: 100%; }
 
 /* ── 화면용 설정 툴바 ── */
 .toolbar { max-width: 900px; margin: 0 auto; padding: 16px 14px; }
-.tool-card { background: white; border: 2px solid #c8e4d8; border-radius: 16px; padding: 16px; box-shadow: 0 4px 16px rgba(45,128,104,0.08); }
-.tool-card h1 { font-family: 'Nanum Myeongjo', serif; font-size: 18px; font-weight: 800; color: #1f5a48; margin-bottom: 4px; }
-.tool-card .desc { font-size: 12px; color: #5a7a70; margin-bottom: 14px; }
+.tool-card { background: white; border: 2px solid #C6D5D2; border-radius: 16px; padding: 16px; box-shadow: 0 4px 16px rgba(44,47,45,0.08); }
+.tool-card h1 { font-family: 'Nanum Myeongjo', serif; font-size: 18px; font-weight: 800; color: #3A544E; margin-bottom: 4px; }
+.tool-card .desc { font-size: 12px; color: #6A716C; margin-bottom: 14px; }
 .tool-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
-.tool-row label.fld { font-size: 12px; font-weight: 700; color: #1f5a48; display: flex; align-items: center; gap: 6px; }
-select, input[type=number] { font-family: inherit; font-size: 13px; font-weight: 700; color: #1f3a32; padding: 8px 10px; border: 2px solid #c8e4d8; border-radius: 9px; background: white; outline: none; }
-select:focus, input[type=number]:focus { border-color: #5fb8a8; }
+.tool-row label.fld { font-size: 12px; font-weight: 700; color: #3A544E; display: flex; align-items: center; gap: 6px; }
+select, input[type=number] { font-family: inherit; font-size: 13px; font-weight: 700; color: #2C2F2D; padding: 8px 10px; border: 2px solid #C6D5D2; border-radius: 9px; background: white; outline: none; }
+select:focus, input[type=number]:focus { border-color: #A6C1BB; }
 input[type=number] { width: 72px; }
-.chk { font-size: 12px; font-weight: 700; color: #1f5a48; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
-.chk input { width: 15px; height: 15px; accent-color: #2d8068; }
+.chk { font-size: 12px; font-weight: 700; color: #3A544E; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+.chk input { width: 15px; height: 15px; accent-color: #628C83; }
 .btn { font-family: inherit; font-size: 13px; font-weight: 800; border: none; border-radius: 10px; padding: 10px 18px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.btn-primary { background: #2d8068; color: white; }
-.btn-ghost { background: #e9f5ef; color: #1f5a48; border: 2px solid #5fb8a8; }
+.btn-primary { background: #628C83; color: white; }
+.btn-ghost { background: #E9F0EF; color: #3A544E; border: 2px solid #A6C1BB; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.status { font-size: 12px; color: #5a7a70; margin-top: 4px; }
-.status.err { color: #b3362e; font-weight: 700; }
-.dl-row { border-top: 1.5px dashed #c8e4d8; margin-top: 12px; padding-top: 12px; display: none; }
+.status { font-size: 12px; color: #6A716C; margin-top: 4px; }
+.status.err { color: #992F20; font-weight: 700; }
+.dl-row { border-top: 1.5px dashed #C6D5D2; margin-top: 12px; padding-top: 12px; display: none; }
 .dl-row.show { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.dl-hint { font-size: 11px; color: #5a7a70; flex-basis: 100%; }
+.dl-hint { font-size: 11px; color: #6A716C; flex-basis: 100%; }
 .btn svg { width: 15px; height: 15px; vertical-align: -2.5px; margin-right: 5px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* H WORK 자동 출제 */
-.hw-panel { border-top: 1.5px dashed #c8e4d8; margin-top: 12px; padding-top: 12px; display: none; }
+.hw-panel { border-top: 1.5px dashed #C6D5D2; margin-top: 12px; padding-top: 12px; display: none; }
 .hw-panel.show { display: block; }
-.hw-panel .hw-title { font-size: 13px; font-weight: 800; color: #1f5a48; margin-bottom: 3px; }
-.hw-panel .hw-title svg { width: 15px; height: 15px; vertical-align: -2.5px; margin-right: 4px; stroke: #2d8068; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.hw-panel .hw-desc { font-size: 11px; color: #5a7a70; margin-bottom: 10px; line-height: 1.6; }
-.hw-panel input[type=text] { font-family: inherit; font-size: 13px; font-weight: 700; color: #1f3a32; padding: 8px 10px; border: 2px solid #c8e4d8; border-radius: 9px; background: white; outline: none; }
-.hw-panel input[type=text]:focus { border-color: #5fb8a8; }
+.hw-panel .hw-title { font-size: 13px; font-weight: 800; color: #3A544E; margin-bottom: 3px; }
+.hw-panel .hw-title svg { width: 15px; height: 15px; vertical-align: -2.5px; margin-right: 4px; stroke: #628C83; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hw-panel .hw-desc { font-size: 11px; color: #6A716C; margin-bottom: 10px; line-height: 1.6; }
+.hw-panel input[type=text] { font-family: inherit; font-size: 13px; font-weight: 700; color: #2C2F2D; padding: 8px 10px; border: 2px solid #C6D5D2; border-radius: 9px; background: white; outline: none; }
+.hw-panel input[type=text]:focus { border-color: #A6C1BB; }
 .hw-links { display: none; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
 .hw-links.show { display: flex; }
-.hw-links a { font-size: 12px; font-weight: 800; color: #1f5a48; text-decoration: none; background: #e9f5ef; border: 2px solid #5fb8a8; border-radius: 10px; padding: 8px 14px; }
+.hw-links a { font-size: 12px; font-weight: 800; color: #3A544E; text-decoration: none; background: #E9F0EF; border: 2px solid #A6C1BB; border-radius: 10px; padding: 8px 14px; }
 .hw-links a svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* 최근 만든 시험 */
-.hist { border-top: 1.5px dashed #c8e4d8; margin-top: 12px; padding-top: 12px; }
-.hist-title { font-size: 13px; font-weight: 800; color: #1f5a48; margin-bottom: 8px; }
-.hist-title svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: #2d8068; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.hist-title .hist-note { font-weight: 400; font-size: 11px; color: #5a7a70; }
-.hist-item { display: flex; align-items: center; gap: 8px; background: #f4faf7; border: 1.5px solid #d6e7e0; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; }
-.hist-item .h-name { font-weight: 800; color: #1f3a32; cursor: pointer; }
-.hist-item .h-name:hover { color: #2d8068; text-decoration: underline; }
-.hist-item .h-meta { color: #5a7a70; font-size: 11px; }
-.hist-item .h-hw { font-size: 10px; font-weight: 800; color: #1f5a48; background: #d4ede2; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
-.hist-item .h-open { margin-left: auto; font-family: inherit; font-size: 11px; font-weight: 800; color: #1f5a48; background: white; border: 1.5px solid #5fb8a8; border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
-.hist-item .h-del { font-family: inherit; font-size: 12px; color: #94a3b8; background: none; border: none; cursor: pointer; padding: 2px 4px; }
-.hist-item .h-del:hover { color: #b3362e; }
+.hist { border-top: 1.5px dashed #C6D5D2; margin-top: 12px; padding-top: 12px; }
+.hist-title { font-size: 13px; font-weight: 800; color: #3A544E; margin-bottom: 8px; }
+.hist-title svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: #628C83; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hist-title .hist-note { font-weight: 400; font-size: 11px; color: #6A716C; }
+.hist-item { display: flex; align-items: center; gap: 8px; background: #F4F5F3; border: 1.5px solid #E8EAE7; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; }
+.hist-item .h-name { font-weight: 800; color: #2C2F2D; cursor: pointer; }
+.hist-item .h-name:hover { color: #628C83; text-decoration: underline; }
+.hist-item .h-meta { color: #6A716C; font-size: 11px; }
+.hist-item .h-hw { font-size: 10px; font-weight: 800; color: #3A544E; background: #E0EAE7; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.hist-item .h-open { margin-left: auto; font-family: inherit; font-size: 11px; font-weight: 800; color: #3A544E; background: white; border: 1.5px solid #A6C1BB; border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+.hist-item .h-del { font-family: inherit; font-size: 12px; color: #8B928C; background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.hist-item .h-del:hover { color: #992F20; }
 
 /* ── 시험지 ── */
-.sheet { background: white; max-width: 210mm; margin: 14px auto 40px; padding: 14mm 12mm; box-shadow: 0 4px 20px rgba(45,128,104,0.12); }
-.paper-head { border: 2.5px solid #1f3a32; padding: 0; margin-bottom: 6mm; }
-.paper-head .brand-row { display: flex; align-items: stretch; border-bottom: 2px solid #1f3a32; }
-.paper-head .brand { font-family: 'Nanum Myeongjo', serif; font-size: 10px; font-weight: 800; letter-spacing: 4px; padding: 8px 12px; border-right: 2px solid #1f3a32; display: flex; align-items: center; white-space: nowrap; }
+.sheet { background: white; max-width: 210mm; margin: 14px auto 40px; padding: 14mm 12mm; box-shadow: 0 4px 20px rgba(44,47,45,0.10); }
+.paper-head { border: 2.5px solid #2C2F2D; padding: 0; margin-bottom: 6mm; }
+.paper-head .brand-row { display: flex; align-items: stretch; border-bottom: 2px solid #2C2F2D; }
+.paper-head .brand { font-family: 'Nanum Myeongjo', serif; font-size: 10px; font-weight: 800; letter-spacing: 4px; padding: 8px 12px; border-right: 2px solid #2C2F2D; display: flex; align-items: center; white-space: nowrap; }
 .paper-head .title { flex: 1; text-align: center; font-family: 'Nanum Myeongjo', serif; font-size: 17px; font-weight: 800; padding: 8px 10px; letter-spacing: 0.5px; }
-.paper-head .grade-chip { padding: 8px 12px; border-left: 2px solid #1f3a32; display: flex; align-items: center; font-weight: 800; font-size: 13px; white-space: nowrap; }
+.paper-head .grade-chip { padding: 8px 12px; border-left: 2px solid #2C2F2D; display: flex; align-items: center; font-weight: 800; font-size: 13px; white-space: nowrap; }
 .paper-head .info-row { display: flex; font-size: 11.5px; }
-.paper-head .info-cell { flex: 1; padding: 7px 10px; border-right: 1.5px solid #1f3a32; display: flex; gap: 6px; align-items: center; }
+.paper-head .info-cell { flex: 1; padding: 7px 10px; border-right: 1.5px solid #2C2F2D; display: flex; gap: 6px; align-items: center; }
 .paper-head .info-cell:last-child { border-right: none; }
 .paper-head .info-cell b { font-weight: 800; }
-.paper-head .write { flex: 1; border-bottom: 1.5px solid #9bb5aa; min-height: 15px; }
-.range-note { font-size: 10.5px; color: #3f5a50; margin-bottom: 5mm; line-height: 1.55; padding: 6px 9px; background: #f2f8f5; border: 1px solid #cfe3da; border-radius: 4px; }
+.paper-head .write { flex: 1; border-bottom: 1.5px solid #A6C1BB; min-height: 15px; }
+.range-note { font-size: 10.5px; color: #3A544E; margin-bottom: 5mm; line-height: 1.55; padding: 6px 9px; background: #F4F5F3; border: 1px solid #C6D5D2; border-radius: 4px; }
 .range-note b { font-weight: 800; }
 
-.qwrap { column-count: 2; column-gap: 9mm; column-rule: 1px solid #cfe3da; }
+.qwrap { column-count: 2; column-gap: 9mm; column-rule: 1px solid #C6D5D2; }
 .section-block { break-inside: avoid-column; page-break-inside: avoid; margin-bottom: 4.5mm; }
-.section-head { font-size: 11px; font-weight: 800; background: #eef6f2; border: 1.2px solid #9bc5b4; padding: 5px 8px; border-radius: 4px; margin-bottom: 2.5mm; line-height: 1.45; }
-.section-head .wk { display: inline-block; font-size: 9px; background: #1f5a48; color: white; border-radius: 3px; padding: 1px 5px; margin-right: 5px; vertical-align: 1px; }
-.p-boxki { border: 1.2px dashed #7fae9c; border-radius: 4px; padding: 5px 8px; margin-bottom: 2.5mm; font-size: 10.5px; line-height: 1.6; background: #fbfdfc; }
+.section-head { font-size: 11px; font-weight: 800; background: #F1F6F4; border: 1.2px solid #A6C1BB; padding: 5px 8px; border-radius: 4px; margin-bottom: 2.5mm; line-height: 1.45; }
+.section-head .wk { display: inline-block; font-size: 9px; background: #3A544E; color: white; border-radius: 3px; padding: 1px 5px; margin-right: 5px; vertical-align: 1px; }
+.p-boxki { border: 1.2px dashed #A6C1BB; border-radius: 4px; padding: 5px 8px; margin-bottom: 2.5mm; font-size: 10.5px; line-height: 1.6; background: #FBFAF6; }
 .p-boxki b { font-weight: 800; margin-right: 5px; }
 .q { font-size: 11px; line-height: 1.6; margin-bottom: 3mm; break-inside: avoid-column; page-break-inside: avoid; }
 .q .qn { font-weight: 800; margin-right: 4px; }
-.q .cho { display: inline-block; border: 1.2px solid #2d8068; color: #1f5a48; border-radius: 4px; padding: 0 6px; font-weight: 800; margin-right: 4px; font-size: 10.5px; }
-.q .ex { display: block; color: #4a6a5f; font-size: 10.5px; margin-top: 1.5mm; padding-left: 8px; border-left: 2px solid #cfe3da; }
-.q .blankline { display: inline-block; min-width: 22mm; border-bottom: 1.3px solid #1f3a32; height: 12px; vertical-align: -2px; }
-.q .ured { color: #c0392b; text-decoration: underline; text-decoration-color: #c0392b; text-underline-offset: 2.5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.q .cho { display: inline-block; border: 1.2px solid #628C83; color: #3A544E; border-radius: 4px; padding: 0 6px; font-weight: 800; margin-right: 4px; font-size: 10.5px; }
+.q .ex { display: block; color: #4E534F; font-size: 10.5px; margin-top: 1.5mm; padding-left: 8px; }
+.q .blankline { display: inline-block; min-width: 22mm; border-bottom: 1.3px solid #2C2F2D; height: 12px; vertical-align: -2px; }
+.q .ured { color: #DB4C39; text-decoration: underline; text-decoration-color: #DB4C39; text-underline-offset: 2.5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .q .writeline { display: block; margin-top: 2mm; }
-.q .writeline .lbl { font-size: 10px; color: #6a8a7f; margin-right: 4px; }
+.q .writeline .lbl { font-size: 10px; color: #6A716C; margin-right: 4px; }
 .q .opts { margin-top: 1.5mm; }
 .q .opt { display: block; padding-left: 4px; margin-top: 0.8mm; }
-.q .oxsel { display: inline-block; margin-top: 1.5mm; font-size: 11px; letter-spacing: 1px; color: #3f5a50; }
-.q .oxsel span { display: inline-block; border: 1.3px solid #7fae9c; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; text-align: center; font-weight: 800; margin-right: 8px; }
+.q .oxsel { display: inline-block; margin-top: 1.5mm; font-size: 11px; letter-spacing: 1px; color: #3A544E; }
+.q .oxsel span { display: inline-block; border: 1.3px solid #A6C1BB; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; text-align: center; font-weight: 800; margin-right: 8px; }
 
 /* ── 정답지 ── */
-.answer-sheet { page-break-before: always; border-top: 3px double #c8e4d8; margin-top: 10mm; padding-top: 8mm; }
-.ans-title { font-family: 'Nanum Myeongjo', serif; font-size: 15px; font-weight: 800; border: 2px solid #1f3a32; padding: 7px 12px; margin-bottom: 4mm; text-align: center; }
+.answer-sheet { page-break-before: always; border-top: 3px double #C6D5D2; margin-top: 10mm; padding-top: 8mm; }
+.ans-title { font-family: 'Nanum Myeongjo', serif; font-size: 15px; font-weight: 800; border: 2px solid #2C2F2D; padding: 7px 12px; margin-bottom: 4mm; text-align: center; }
 .ans-grid { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 5mm; }
-.ans-grid td { border: 1.2px solid #1f3a32; padding: 4px 6px; text-align: center; }
-.ans-grid td.no { font-weight: 800; background: #f7fbf9; width: 9%; }
+.ans-grid td { border: 1.2px solid #2C2F2D; padding: 4px 6px; text-align: center; }
+.ans-grid td.no { font-weight: 800; background: #FBFAF6; width: 9%; }
 .expl-list { font-size: 10.5px; line-height: 1.6; column-count: 2; column-gap: 9mm; }
 .expl-list .e { margin-bottom: 2mm; break-inside: avoid-column; }
 .expl-list .e b { font-weight: 800; }
@@ -117,7 +117,7 @@ input[type=number] { width: 72px; }
     @bottom-center {
       content: "- " counter(page) " / " counter(pages) " -";
       font-size: 9pt;
-      color: #6a7d74;
+      color: #6A716C;
     }
   }
 }

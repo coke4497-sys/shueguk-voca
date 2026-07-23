@@ -11,10 +11,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23DCE9E4'/%3E%3C/svg%3E" />
 <style>
   :root{
-    --bg:#E4EFEA; --surface:#FFFFFF;
-    --ink:#2A332F; --ink-soft:#65726B;
-    --accent:#3A6B5E; --icon:#3F4541; --icon-bg:#EBF0ED;
-    --line:#D7E3DD; --line-soft:#E5EDE8; --radius:18px;
+    --bg:#C6D5D2; --surface:#FFFFFF;
+    --ink:#2C2F2D; --ink-soft:#6A716C;
+    --accent:#4C6E66; --btn:#628C83; --icon:#4E534F; --icon-bg:#F1F6F4;
+    --line:#D4D8D3; --line-soft:#E8EAE7; --radius:18px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -37,7 +37,7 @@
     font:inherit;font-size:.95rem;font-weight:700;color:var(--ink-soft);cursor:pointer;text-align:center;
     transition:border-color .15s, color .15s, background .15s;}
   .grade-btn:hover{border-color:var(--line);color:var(--accent);}
-  .grade-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .grade-btn.active{background:var(--btn);color:#fff;border-color:var(--btn);}
 
   .section-title{font-family:"Gowun Batang",serif;font-size:1.05rem;font-weight:700;color:var(--accent);margin:4px 2px 10px;}
 
@@ -53,12 +53,12 @@
   .open{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:var(--accent);text-decoration:none;}
   .open svg{width:14px;height:14px;}
   .copy{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:.78rem;color:var(--ink-soft);
-    background:#EEF3F0;border:1px solid var(--line-soft);border-radius:9px;padding:6px 11px;cursor:pointer;
+    background:#F1F6F4;border:1px solid var(--line-soft);border-radius:9px;padding:6px 11px;cursor:pointer;
     transition:border-color .15s, color .15s, background .15s;}
   .copy svg{width:13px;height:13px;}
   .copy:hover{color:var(--accent);border-color:var(--line);}
-  .copy.done{color:var(--accent);background:#DDEAE2;border-color:#C5DBCF;}
-  .badge{font-size:.72rem;color:var(--ink-soft);background:#DCE6E0;border-radius:20px;padding:3px 10px;}
+  .copy.done{color:var(--accent);background:#E0EAE7;border-color:#C6D5D2;}
+  .badge{font-size:.72rem;color:var(--ink-soft);background:#E0EAE7;border-radius:20px;padding:3px 10px;}
 
   footer{text-align:center;margin-top:40px;color:var(--ink-soft);font-size:.82rem;line-height:2;}
   @media (max-width:430px){
