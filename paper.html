@@ -155,11 +155,12 @@ input[type=number] { width: 72px; }
       <label class="fld" id="fldSeed" style="display:none;">출제 번호
         <input type="number" id="inpSeed" value="1" min="1" max="9999">
       </label>
-      <label class="fld" title="주차별 학습 어휘에서 초성·뜻만 제시하는 단답 문항을 만들어 시험지 끝에 추가합니다.">보기 없는 단답
+      <label class="fld" title="주차별 학습 어휘에서 뜻을 제시하는 단답 문항을 만들어 시험지 끝에 추가합니다.">보기 없는 단답
         <input type="number" id="inpExtra" value="10" min="0" max="60" step="1"> 문항 추가
       </label>
     </div>
     <div class="tool-row">
+      <label class="chk" id="fldCho"><input type="checkbox" id="chkCho" checked> 보기 없는 단답에 초성 힌트</label>
       <label class="chk"><input type="checkbox" id="chkExpl"> 정답지에 해설 포함</label>
       <button class="btn btn-primary" id="btnBuild">테스트지 만들기</button>
     </div>
@@ -404,8 +405,9 @@ input[type=number] { width: 72px; }
     return out;
   }
 
-  /* 추가 단답 섹션 생성: 주차별 균등 배분, 본 문항과 중복 어휘 제외, 시드로 재현 */
-  function buildExtraSections(weekDatas, extra, usedWords, rnd) {
+  /* 추가 단답 섹션 생성: 주차별 균등 배분, 본 문항과 중복 어휘 제외, 시드로 재현
+     withCho=false면 초성 힌트 없이 뜻만 제시 (문항 선정은 초성 여부와 무관하게 동일) */
+  function buildExtraSections(weekDatas, extra, usedWords, rnd, withCho) {
     var pools = weekDatas.map(function (wd) {
       var pool = studyPool(wd).filter(function (e) {
         return !usedWords[String(e.word).replace(/\s+/g, '')];
@@ -432,10 +434,13 @@ input[type=number] { width: 72px; }
       var picked = pools[wi].slice(0, want[wi]);
       sections.push({
         week: wd.week, weekTitle: wd.title,
-        text: '제시된 초성과 뜻을 참고하여 어휘를 쓰시오. (보기 없음)',
+        text: withCho ? '제시된 초성과 뜻을 참고하여 어휘를 쓰시오. (보기 없음)'
+                      : '다음 뜻에 해당하는 어휘를 쓰시오. (보기 없음)',
         boxki: null,
         questions: picked.map(function (e) {
-          return { type: 'short', chosung: chosungOf(e.word), stem: shortMeaning(e.meaning), answer: e.word };
+          var q = { type: 'short', stem: shortMeaning(e.meaning), answer: e.word };
+          if (withCho) q.chosung = chosungOf(e.word);
+          return q;
         })
       });
     });
@@ -450,6 +455,7 @@ input[type=number] { width: 72px; }
     var total = Math.max(4, Math.min(200, parseInt($('inpCount').value, 10) || 32));
     var seed = parseInt($('inpSeed').value, 10) || 1;
     var extra = Math.max(0, Math.min(60, parseInt($('inpExtra').value, 10) || 0));
+    var withCho = $('chkCho').checked;
     var withExpl = $('chkExpl').checked;
 
     $('status').className = 'status';
@@ -482,7 +488,7 @@ input[type=number] { width: 72px; }
             });
           });
           var extraSections = buildExtraSections(weekDatas, extra, usedWords,
-            mulberry32((seed * 2654435761 + from * 977 + to * 131 + 7) % 2147483647));
+            mulberry32((seed * 2654435761 + from * 977 + to * 131 + 7) % 2147483647), withCho);
           extraSections.forEach(function (sec) { extraCount += sec.questions.length; });
           if (extraSections.length) weekSections.push(extraSections);
         }
@@ -554,7 +560,7 @@ input[type=number] { width: 72px; }
 
         built = { grade: grade, from: from, to: to, mode: mode, seed: seed, flat: flat };
         built.histRec = histAdd({
-          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed, x: extra,
+          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed, x: extra, cho: withCho ? 1 : 0,
           expl: withExpl, qn: num, at: Date.now(),
           title: GRADE_LABEL[grade] + ' ' + paperTitle
         });
@@ -609,7 +615,7 @@ input[type=number] { width: 72px; }
   function histStore(list) {
     try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 15))); } catch (e) {}
   }
-  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.seed || 1, r.x || 0].join('|'); }
+  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.seed || 1, r.x || 0, r.cho == null ? 1 : r.cho].join('|'); }
   function histAdd(rec) {
     var list = histLoad().filter(function (r) { return histId(r) !== histId(rec); });
     /* 같은 조건 재생성 시 기존 기록의 H WORK 표시는 유지 */
@@ -669,6 +675,7 @@ input[type=number] { width: 72px; }
     if (r.mode === 'sample') { $('inpCount').value = r.cnt; }
     $('inpSeed').value = r.seed || 1;
     $('inpExtra').value = r.x != null ? r.x : 0;
+    $('chkCho').checked = r.cho == null ? true : !!r.cho;
     $('chkExpl').checked = !!r.expl;
     syncFields();
     build();
@@ -753,6 +760,7 @@ input[type=number] { width: 72px; }
   function syncFields() {
     var s = $('selMode').value === 'sample';
     var x = (parseInt($('inpExtra').value, 10) || 0) > 0;
+    $('fldCho').style.display = x ? 'flex' : 'none';
     $('fldCount').style.display = s ? 'flex' : 'none';
     /* 출제 번호는 랜덤 추출 또는 보기 없는 단답이 있을 때 의미가 있음 */
     $('fldSeed').style.display = (s || x) ? 'flex' : 'none';
