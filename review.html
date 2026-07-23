@@ -25,6 +25,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
 .tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .week-title { font-size: 13px; font-weight: 800; color: #3A544E; }
+.hide-toggle .t-ic { width: 15px; height: 15px; vertical-align: -3px; margin-right: 5px; }
 .hide-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #3A544E; background: white; border: 1.5px solid #A6C1BB; border-radius: 999px; padding: 8px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
 .hide-toggle.on { background: #628C83; border-color: #628C83; color: white; }
 
@@ -62,7 +63,7 @@ body.hide-mode .vcard:not(.revealed)::after { content: '눌러서 뜻 확인'; d
 
   <div class="tools" id="tools" style="display:none;">
     <span class="week-title" id="weekTitle"></span>
-    <span class="hide-toggle" id="hideToggle">👁 뜻 가리기</span>
+    <span class="hide-toggle" id="hideToggle"><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>뜻 가리기</span>
   </div>
 
   <div id="content"><div class="msg">학년을 선택해 주세요.</div></div>
@@ -178,7 +179,7 @@ body.hide-mode .vcard:not(.revealed)::after { content: '눌러서 뜻 확인'; d
   $('hideToggle').addEventListener('click', function () {
     var on = document.body.classList.toggle('hide-mode');
     this.className = 'hide-toggle' + (on ? ' on' : '');
-    this.textContent = on ? '🙈 뜻 가리는 중' : '👁 뜻 가리기';
+    this.innerHTML = on ? '<svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>뜻 가리는 중' : '<svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>뜻 가리기';
     document.querySelectorAll('.vcard').forEach(function (c) { c.classList.remove('revealed'); });
   });
   function bindCards() {
