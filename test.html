@@ -430,6 +430,33 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             $('si-name').scrollIntoView({ block: 'center' });
             return;
         }
+        /* 제출 시점에 열린 주차 재확인 — 페이지를 미리 열어뒀다가 주차가 바뀐 뒤
+         * 지난 주차를 제출하는 것을 막는다. 확인 실패(순간 장애) 시엔 받아준다. */
+        var btn = $('submit-btn');
+        btn.disabled = true; btn.textContent = '확인 중…';
+        fetch(STATUS_URL + '&t=' + Date.now(), { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+                if (st && st.result === 'success') {
+                    if (st.open === false) { blockSubmit('지금은 어휘 테스트를 운영하지 않아요.\n선생님 안내를 기다려주세요.'); return; }
+                    if (st.week >= 1 && String(st.week) !== String(week)) {
+                        blockSubmit('지금은 ' + st.week + '주차 어휘 테스트만 제출할 수 있어요.\n개인 페이지의 어휘 카드에서 다시 들어와 주세요.');
+                        return;
+                    }
+                }
+                doSubmit(sName, sSchool, sGrade, sPhone);
+            })
+            .catch(function() { doSubmit(sName, sSchool, sGrade, sPhone); });
+    }
+
+    function blockSubmit(msg) {
+        var btn = $('submit-btn');
+        btn.disabled = false; btn.textContent = '전체 제출';
+        alert(msg);
+    }
+
+    function doSubmit(sName, sSchool, sGrade, sPhone) {
+        if (submitted) return;
         submitted = true;
         var score = 0, details = [];
 
