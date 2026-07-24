@@ -20,6 +20,21 @@
 - 이벤트 "슈국 어휘사냥": 8/5(수) 주차 가 수업 시간 20분, 1~4주 어휘 종합, 학년별 우수자 시상, 문항 수는 학년별로 다름(사용자가 직접 제작), 페이퍼 배부→H WORK 제출→페이퍼 회수
 - 학생 복습: `review.html` (열린 주차까지만 노출)
 
+## Apps Script 재배포 (clasp)
+세션에서 직접 Apps Script를 재배포하는 방법. (2026-07-24 설정)
+
+- 전제: 환경설정에 `CLASPRC_JSON` 환경 변수(clasp 로그인 정보), 설정 스크립트(`printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json` + clasp 전역 설치), 허용 도메인 `script.googleapis.com`·`oauth2.googleapis.com`이 준비되어 있음.
+  세션에 이것들이 없으면 사용자에게 환경설정 확인을 요청 (환경설정 변경은 그 이후 시작한 새 세션부터 적용됨).
+- 스크립트 ID:
+  - 어휘 결과 시트 「2026 어휘, 시작이 반이다」 (`apps-script/Code.gs`): `1Q4Jrt1wVymBfWBb18_hUno4xI5VUD5NH2bLvZOtbEzCObBRQk5zjbhZe`
+  - H WORK: `1bYZrb9ACZ-QAfsEjcpdL94rVbw_Y9dskaL1vkCJniVUGSGwHZ8U2VG1G`
+- 절차: 빈 작업 폴더에서 `clasp clone <스크립트ID>` → 받은 코드 파일을 저장소의 새 코드로 교체 → `clasp push` → `clasp deployments`에서 기존 웹앱 배포 ID 확인(학생 페이지가 쓰는 exec 주소의 `AKfy…` 부분과 동일) → `clasp deploy -i <기존 배포 ID>`로 새 버전 배포.
+  **주의: 새 배포를 만들면 주소가 바뀌어 학생 페이지가 깨지므로, 반드시 기존 배포를 새 버전으로 올릴 것.**
+
+## 대기 작업: 어휘 Code.gs 재배포 (서버 검증 켜기)
+새 세션에서 사용자가 "어휘 Code.gs 재배포해줘"라고 하면: 위 재배포 절차대로 어휘 결과 시트 스크립트에 main 최신 `apps-script/Code.gs`를 push하고 기존 배포를 새 버전으로 올린다. 완료 후 사용자에게 현재 주차가 평소처럼 제출되는지 확인을 안내.
+(배경: 지난 주차 제출 차단(#34) 중 서버 쪽 검증은 재배포 전까지 꺼져 있음. test.html 쪽 제출 시점 재확인은 이미 배포됨.)
+
 ## 대기 작업: 슈국 어휘사냥 공지 게시 (대상: 중2~고2)
 새 세션에서 사용자가 "어휘사냥 공지 올려줘"라고 하면 아래를 수행한다.
 (문구는 2026-07-22 세션에서 사용자가 확정. 게시 대상은 중2·중3·고1·고2 — 전체 아님.)
