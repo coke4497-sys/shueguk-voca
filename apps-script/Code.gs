@@ -21,6 +21,9 @@ var ACCESS_KEY = 'shueguk2026';   // 대시보드와 동일하게 유지
 var SHEET_NAME = '';              // 결과 시트 이름. 비워두면 첫 번째 시트를 사용
 var HEADERS = ['time', 'name', 'school', 'grade', 'phone4', 'round', 'score', 'details'];
 
+// 리포트 Apps Script의 열린 주차 조회 주소 (test.html의 STATUS_URL과 동일)
+var STATUS_URL = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec?action=vocaStatus';
+
 /* 결과 시트 가져오기 (완전히 빈 시트면 헤더 생성) */
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -43,10 +46,32 @@ function headerMap_(sh) {
   return map;
 }
 
+/* 열린 주차 조회 (60초 캐시 — 제출마다 리포트 스크립트를 부르지 않도록) */
+function vocaStatus_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('vocaStatus');
+  if (hit) return JSON.parse(hit);
+  var st = JSON.parse(UrlFetchApp.fetch(STATUS_URL, { muteHttpExceptions: true }).getContentText());
+  cache.put('vocaStatus', JSON.stringify(st), 60);
+  return st;
+}
+
 /* 학생 제출 (test.html → fetch POST) — 헤더 이름에 맞춰 저장 */
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
+    // 지난 주차 제출 차단 — 열린 주차와 다르면 기록하지 않는다.
+    // (test.html도 제출 시점에 같은 확인을 하지만, 확인이 실패하면 열어주므로 여기가 최종 방어선.
+    //  주차 조회 자체가 실패하면 정상 제출을 잃지 않도록 받아준다.)
+    try {
+      var st = vocaStatus_();
+      if (st && st.result === 'success') {
+        if (st.open === false) return json_({ ok: false, error: 'closed' });
+        if (st.week >= 1 && String(st.week) !== String(data.round || '').trim()) {
+          return json_({ ok: false, error: 'wrong_week', week: st.week });
+        }
+      }
+    } catch (ignore) {}
     var sh = getSheet_();
     var map = headerMap_(sh);
     // 빠진 항목이 있으면 헤더 끝에 칼럼 추가
