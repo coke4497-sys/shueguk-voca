@@ -87,6 +87,7 @@ function doPost(e) {
     for (var i = 0; i < width; i++) row.push('');
     HEADERS.forEach(function (h) { row[map[h]] = (data[h] != null ? data[h] : ''); });
     sh.appendRow(row);
+    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e) {}
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -136,6 +137,32 @@ function readRows_() {
   return rows;
 }
 
+/* 응시 여부 조회용 [이름, 전화4, 주차] 목록 — 60초 캐시.
+ * 슈퍼스타 개별 페이지가 열릴 때마다 taken 조회가 오는데, 접속이 몰리면
+ * 매번 시트 전체를 읽다가 서버가 밀리므로 압축 목록만 캐시해 둔다.
+ * (새 제출이 오면 doPost 에서 즉시 캐시를 비워 최신을 유지) */
+function takenIndex_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('takenIdx');
+  if (hit) return JSON.parse(hit);
+  var sh = getSheet_();
+  var values = sh.getDataRange().getValues();
+  var list = [];
+  if (values.length >= 2) {
+    var keys = values[0].map(canon_);
+    var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+    for (var i = 1; i < values.length; i++) {
+      list.push([
+        ('' + (iName  >= 0 && values[i][iName]  != null ? values[i][iName]  : '')).trim(),
+        (iPhone >= 0 ? ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim() : null),
+        ('' + (iRound >= 0 && values[i][iRound] != null ? values[i][iRound] : '')).trim()
+      ]);
+    }
+  }
+  try { cache.put('takenIdx', JSON.stringify(list), 60); } catch (e) {}  // 100KB 초과 등이면 캐시 없이 진행
+  return list;
+}
+
 /* 학생 본인 응시 여부 확인 (이름+주차, 전화4는 보조). 데이터는 반환하지 않고 boolean 만.
  * ※ 학생이 테스트에 입력하는 전화4(본인 번호)와 개인 페이지가 보내는 전화4(학생ID=부모님
  *   번호 뒤 4자리)가 다를 수 있어, 전화4 불일치를 이유로 응시 기록을 버리지 않는다.
@@ -145,20 +172,14 @@ function checkTaken_(name, phone4, round) {
   phone4 = ('' + (phone4 == null ? '' : phone4)).trim();
   round = ('' + (round == null ? '' : round)).trim();
   if (!name || !round) return { ok: true, taken: false };
-  var sh = getSheet_();
-  var values = sh.getDataRange().getValues();
-  if (values.length < 2) return { ok: true, taken: false };
-  var keys = values[0].map(canon_);
-  var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+  var list = takenIndex_();
   var nameMatch = false;
-  for (var i = 1; i < values.length; i++) {
-    var rn = ('' + (values[i][iRound] == null ? '' : values[i][iRound])).trim();
-    if (rn !== round) continue;
-    var nm = ('' + (values[i][iName] == null ? '' : values[i][iName])).trim();
-    if (nm !== name) continue;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i][2] !== round) continue;
+    if (list[i][0] !== name) continue;
     nameMatch = true;   // 이름+주차 일치 → 응시로 인정
-    if (phone4 && iPhone >= 0) {
-      var ph = ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim();
+    if (phone4 && list[i][1] != null) {
+      var ph = list[i][1];
       if (!ph || ph === phone4) return { ok: true, taken: true };   // 전화4까지 일치 → 즉시 확정
     } else {
       return { ok: true, taken: true };
@@ -190,6 +211,7 @@ function deleteRows_(idsStr) {
       if (rowSig_(values[rn - 1]) === want[rn]) { sh.deleteRow(rn); deleted++; }
       else skipped++;
     });
+    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e2) {}
     return { ok: true, deleted: deleted, skipped: skipped };
   } catch (err) {
     return { ok: false, error: String(err) };
