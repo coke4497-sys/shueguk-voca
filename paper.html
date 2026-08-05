@@ -373,14 +373,20 @@ input[type=number] { width: 72px; }
   var CHO_LIST = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
   var CHO_SUFFIX = ['스럽다', '거리다', '하다', '롭다', '되다', '지다'];
 
-  function chosungOf(word) {
-    var base = word, tail = '';
+  /* '~하다'류 어미를 뗀 축약형 (없으면 null) — 초성 표기·대체 정답에 공통 사용 */
+  function baseForm(word) {
     for (var i = 0; i < CHO_SUFFIX.length; i++) {
       var sfx = CHO_SUFFIX[i];
       if (word.length > sfx.length && word.slice(-sfx.length) === sfx) {
-        base = word.slice(0, -sfx.length); tail = sfx; break;
+        return word.slice(0, -sfx.length);
       }
     }
+    return null;
+  }
+
+  function chosungOf(word) {
+    var b = baseForm(word);
+    var base = b || word, tail = b ? word.slice(b.length) : '';
     var out = '';
     for (var j = 0; j < base.length; j++) {
       var c = base.charCodeAt(j);
@@ -439,6 +445,9 @@ input[type=number] { width: 72px; }
         boxki: null,
         questions: picked.map(function (e) {
           var q = { type: 'short', stem: shortMeaning(e.meaning), answer: e.word };
+          /* '즐비하다' → '즐비'처럼 어미를 뺀 축약형도 H WORK 채점에서 정답 인정 */
+          var b = baseForm(e.word);
+          if (b) q.answers = [e.word, b];
           if (withCho) q.chosung = chosungOf(e.word);
           return q;
         })
