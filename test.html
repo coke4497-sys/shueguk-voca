@@ -172,9 +172,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 
     function $(id) { return document.getElementById(id); }
     function esc(s) { return ('' + (s == null ? '' : s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    // 공백 제거 + 원문자(①②③… / ㉠㉡…)를 보통 글자로 정규화하여 채점에 유연하게 대응
+    // 공백·반점 제거 + 원문자(①②③… / ㉠㉡…)를 보통 글자로 정규화하여 채점에 유연하게 대응
+    // (정답이 "길, 봄, 바지"처럼 여러 개일 때 반점 없이 "길 봄 바지"로 써도 정답 처리)
     function normalize(s) {
-        s = (s || '').replace(/\s/g, '').trim();
+        s = (s || '').replace(/\s/g, '').replace(/[,，、]/g, '').trim();
         var map = { '①':'1','②':'2','③':'3','④':'4','⑤':'5','⑥':'6','⑦':'7','⑧':'8','⑨':'9','⑩':'10' };
         return s.replace(/[①-⑩]/g, function(c) { return map[c] || c; });
     }
