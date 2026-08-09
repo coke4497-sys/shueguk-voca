@@ -484,6 +484,15 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
                 var accept = (q.answers && q.answers.length) ? q.answers : [q.answer];
                 isCorrect = !!user && accept.some(function(a) { return normalize(a) === user; });
                 if (!isCorrect && q.contains && user.indexOf(normalize(q.contains)) !== -1) isCorrect = true;
+                /* 반점으로 구분된 복수 정답(예: "꿩, 알")은 키워드가 모두 들어 있으면 정답
+                   — 순서·구분자·앞뒤 말("꿩 먹고 알 먹기")과 무관하게 인정 */
+                if (!isCorrect && user) {
+                    isCorrect = accept.some(function(a) {
+                        var groups = ('' + (a == null ? '' : a)).split(/[,，]/).map(normalize).filter(function(g) { return g; });
+                        if (groups.length < 2) return false;
+                        return groups.every(function(g) { return user.indexOf(g) !== -1; });
+                    });
+                }
                 inp.disabled = true;
                 fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
                 if (isCorrect) {
