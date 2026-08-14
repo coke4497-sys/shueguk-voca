@@ -255,6 +255,15 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             gradeSel.appendChild(o);
         });
 
+        // 개별 페이지에서 넘어온 학생 정보로 미리 채움 — 매번 손으로 치다 이름 표기가
+        // 달라지면(예: 임지호/임지호B) 티쳐스 페이지에서 미제출로 잡히는 문제 방지
+        var pName = (params.get('name') || '').trim();
+        var pSchool = (params.get('school') || '').trim();
+        var pPhone = (params.get('p4') || '').replace(/[^0-9]/g, '').slice(0, 4);
+        if (pName) $('si-name').value = pName;
+        if (pSchool) $('si-school').value = pSchool;
+        if (pPhone.length === 4) $('si-phone').value = pPhone;
+
         buildStudy(data.study || {});
         buildQuestions();
         attachListeners();
