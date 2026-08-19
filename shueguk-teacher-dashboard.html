@@ -161,11 +161,12 @@ tr.sel-on > td { background: #eef9f3; }
     function selCount(){ return Object.keys(selected).length; }
 
     /* ===== JSONP 로더 ===== */
-    function loadData(){
-        showStatus('loading', '결과를 불러오는 중…');
+    function loadData(opts){
+        opts = opts || {};   // opts.full: 상세 포함 전체(CSV용), opts.done: 성공 콜백
+        showStatus('loading', opts.full ? '상세 포함 전체를 불러오는 중… (조금 걸려요)' : '결과를 불러오는 중…');
         var cb = 'shueguk_cb_' + Date.now();
         var done = false;
-        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, 12000);
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, opts.full ? 45000 : 15000);
         window[cb] = function(resp){
             if (done) return; done = true; clearTimeout(timer); cleanup();
             if (!resp || resp.ok !== true){
@@ -173,14 +174,37 @@ tr.sel-on > td { background: #eef9f3; }
                 return;
             }
             ALL = (resp.rows || []).map(normalizeRow);
+            if (opts.full) ALL.forEach(function(r){ r._hasDetails = true; });
             pruneSelection();
             buildFilters(); applyFilters();
             renderParticipation();
+            if (opts.done) opts.done();
         };
         var s = document.createElement('script');
         s.id = cb + '_s';
-        s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + '&t=' + Date.now();
+        s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) + (opts.full ? '' : '&lite=1') + '&t=' + Date.now();
         s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
+        document.body.appendChild(s);
+        function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
+    }
+
+    /* ===== 행별 상세 조회 (JSONP, action=detail) — 목록은 lite라 상세가 없음 ===== */
+    function fetchDetail(r, done){
+        var cb = 'shueguk_dt_' + r._row + '_' + Date.now();
+        var fin = false;
+        var timer = setTimeout(function(){ if (!fin){ fin = true; cleanup(); r.details = '(상세를 불러오지 못했어요 — 다시 눌러 주세요)'; done(); r.details = ''; } }, 12000);
+        window[cb] = function(resp){
+            if (fin) return; fin = true; clearTimeout(timer); cleanup();
+            if (resp && resp.ok === true){ r.details = '' + (resp.details || ''); r._hasDetails = true; }
+            else r.details = '(상세를 불러오지 못했어요 — 새로고침 후 다시 시도해 주세요)';
+            done();
+            if (!(resp && resp.ok === true)) r.details = '';
+        };
+        var s = document.createElement('script');
+        s.id = cb + '_s';
+        s.src = SCRIPT_URL + '?callback=' + cb + '&key=' + encodeURIComponent(ACCESS_KEY) +
+                '&action=detail&row=' + encodeURIComponent(r._row) + '&sig=' + encodeURIComponent(r._sig) + '&t=' + Date.now();
+        s.onerror = function(){ if (!fin){ fin = true; clearTimeout(timer); cleanup(); r.details = '(상세를 불러오지 못했어요)'; done(); r.details = ''; } };
         document.body.appendChild(s);
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
@@ -241,6 +265,7 @@ tr.sel-on > td { background: #eef9f3; }
                  name: '' + (r.name||''), school: '' + (r.school||''), grade: '' + (r.grade||''),
                  phone4: '' + (r.phone4||''), round: '' + (r.round||''), score: '' + (r.score||''),
                  details: '' + (r.details||''), correct: sc.correct, total: sc.total, pct: sc.pct,
+                 _hasDetails: !!('' + (r.details||'')),
                  _row: r._row, _sig: '' + (r._sig||'') };
     }
     function parseScore(s){
@@ -290,7 +315,7 @@ tr.sel-on > td { background: #eef9f3; }
         var head = '<div class="d-head">점수 ' + esc(r.score || '-') +
             ' · 정답률 ' + (r.pct === null ? '-' : r.pct + '%') +
             ' · <span class="miss">틀린 문항 ' + miss + '개</span></div>';
-        return '<div class="detail-box">' + head + (body || '(상세 없음)') + '</div>';
+        return '<div class="detail-box">' + head + (body || (r._hasDetails ? '(상세 없음)' : '<span class="muted">상세를 불러오는 중…</span>')) + '</div>';
     }
 
     function applyFilters(){
@@ -322,7 +347,16 @@ tr.sel-on > td { background: #eef9f3; }
             tb.appendChild(dr);
         });
         tb.querySelectorAll('.detail-btn').forEach(function(b){
-            b.addEventListener('click', function(){ var d = $('detail-' + b.getAttribute('data-i')); d.style.display = d.style.display === 'none' ? 'table-row' : 'none'; });
+            b.addEventListener('click', function(){
+                var i = b.getAttribute('data-i');
+                var d = $('detail-' + i);
+                if (d.style.display !== 'none'){ d.style.display = 'none'; return; }
+                d.style.display = 'table-row';
+                var r = VIEW[i];
+                if (r && !r._hasDetails) fetchDetail(r, function(){
+                    d.firstChild.innerHTML = renderDetails(r);
+                });
+            });
         });
         tb.querySelectorAll('.row-chk').forEach(function(c){
             c.addEventListener('change', function(){
@@ -465,6 +499,11 @@ tr.sel-on > td { background: #eef9f3; }
     }
     function downloadCSV(){
         var rows = getFiltered();
+        var needFull = rows.some(function(r){ return !r._hasDetails; });
+        if (needFull){   // 목록은 lite(상세 없음) — CSV에는 상세가 들어가므로 전체를 한 번 받아온다
+            loadData({ full: true, done: downloadCSV });
+            return;
+        }
         var blob = new Blob([toCSV(rows)], { type: 'text/csv;charset=utf-8;' });
         var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = 'shueguk_vocab_results_' + new Date().toISOString().slice(0,10) + '.csv';

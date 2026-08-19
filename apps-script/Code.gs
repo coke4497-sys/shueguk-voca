@@ -105,8 +105,12 @@ function doGet(e) {
     payload = { ok: false, error: 'unauthorized' };
   } else if (p.action === 'delete') {
     payload = deleteRows_(p.ids || '');
+  } else if (p.action === 'detail') {
+    payload = detailRow_(p.row, p.sig);
   } else {
-    payload = { ok: true, rows: readRows_() };
+    // lite=1: 목록에서 상세(details)를 뺀다 — 대시보드 첫 화면용(응답 1MB→수십 KB).
+    // 상세는 행별 action=detail, CSV 내보내기는 lite 없이 전체 조회.
+    payload = { ok: true, rows: readRows_(p.lite === '1') };
   }
   var out = JSON.stringify(payload);
   if (cb) {
@@ -120,7 +124,7 @@ function doGet(e) {
 /* 시트 → 행 객체 배열. 헤더 이름 기준으로 매핑.
  * 각 행에 시트 행번호(_row, 1-based)와 내용 해시(_sig)를 덧붙여
  * 대시보드가 안전하게 삭제 대상을 지정할 수 있게 한다. */
-function readRows_() {
+function readRows_(lite) {
   var sh = getSheet_();
   var values = sh.getDataRange().getValues();
   if (values.length < 2) return [];
@@ -129,11 +133,25 @@ function readRows_() {
   for (var i = 1; i < values.length; i++) {
     var obj = {};
     for (var j = 0; j < keys.length; j++) obj[keys[j] || ('col' + j)] = values[i][j];
+    if (lite) obj.details = '';   // 상세는 빼고 보냄 (_sig는 상세 포함 전체 행으로 계산 — 삭제 대조용)
     obj._row = i + 1;             // 시트상의 실제 행번호 (헤더가 1행)
     obj._sig = rowSig_(values[i]); // 행 내용 해시 (삭제 시 대조용)
     rows.push(obj);
   }
   return rows;
+}
+
+/* 한 행의 상세(details)만 반환 — 대시보드 '상세' 버튼용. 해시가 다르면(그 사이 변경/삭제) 오류. */
+function detailRow_(rowNo, sig) {
+  rowNo = parseInt(rowNo, 10);
+  var sh = getSheet_();
+  if (!(rowNo >= 2) || rowNo > sh.getLastRow()) return { ok: false, error: 'gone' };
+  var lastCol = sh.getLastColumn();
+  var keys = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(canon_);
+  var v = sh.getRange(rowNo, 1, 1, lastCol).getValues()[0];
+  if (rowSig_(v) !== ('' + (sig == null ? '' : sig))) return { ok: false, error: 'changed' };
+  var iD = keys.indexOf('details');
+  return { ok: true, row: rowNo, details: iD >= 0 ? '' + (v[iD] == null ? '' : v[iD]) : '' };
 }
 
 /* 학생 본인 응시 여부 확인 (이름+주차, 전화4는 보조). 데이터는 반환하지 않고 boolean 만.
