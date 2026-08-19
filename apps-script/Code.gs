@@ -87,6 +87,7 @@ function doPost(e) {
     for (var i = 0; i < width; i++) row.push('');
     HEADERS.forEach(function (h) { row[map[h]] = (data[h] != null ? data[h] : ''); });
     sh.appendRow(row);
+    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e) {}
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -154,6 +155,32 @@ function detailRow_(rowNo, sig) {
   return { ok: true, row: rowNo, details: iD >= 0 ? '' + (v[iD] == null ? '' : v[iD]) : '' };
 }
 
+/* 응시 여부 조회용 [이름, 전화4, 주차] 목록 — 60초 캐시.
+ * 슈퍼스타 개별 페이지가 열릴 때마다 taken 조회가 오는데, 접속이 몰리면
+ * 매번 시트 전체를 읽다가 서버가 밀리므로 압축 목록만 캐시해 둔다.
+ * (새 제출이 오면 doPost 에서 즉시 캐시를 비워 최신을 유지) */
+function takenIndex_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('takenIdx');
+  if (hit) return JSON.parse(hit);
+  var sh = getSheet_();
+  var values = sh.getDataRange().getValues();
+  var list = [];
+  if (values.length >= 2) {
+    var keys = values[0].map(canon_);
+    var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+    for (var i = 1; i < values.length; i++) {
+      list.push([
+        ('' + (iName  >= 0 && values[i][iName]  != null ? values[i][iName]  : '')).trim(),
+        (iPhone >= 0 ? ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim() : null),
+        ('' + (iRound >= 0 && values[i][iRound] != null ? values[i][iRound] : '')).trim()
+      ]);
+    }
+  }
+  try { cache.put('takenIdx', JSON.stringify(list), 60); } catch (e) {}  // 100KB 초과 등이면 캐시 없이 진행
+  return list;
+}
+
 /* 학생 본인 응시 여부 확인 (이름+주차, 전화4는 보조). 데이터는 반환하지 않고 boolean 만.
  * ※ 학생이 테스트에 입력하는 전화4(본인 번호)와 개인 페이지가 보내는 전화4(학생ID=부모님
  *   번호 뒤 4자리)가 다를 수 있어, 전화4 불일치를 이유로 응시 기록을 버리지 않는다.
@@ -163,20 +190,14 @@ function checkTaken_(name, phone4, round) {
   phone4 = ('' + (phone4 == null ? '' : phone4)).trim();
   round = ('' + (round == null ? '' : round)).trim();
   if (!name || !round) return { ok: true, taken: false };
-  var sh = getSheet_();
-  var values = sh.getDataRange().getValues();
-  if (values.length < 2) return { ok: true, taken: false };
-  var keys = values[0].map(canon_);
-  var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+  var list = takenIndex_();
   var nameMatch = false;
-  for (var i = 1; i < values.length; i++) {
-    var rn = ('' + (values[i][iRound] == null ? '' : values[i][iRound])).trim();
-    if (rn !== round) continue;
-    var nm = ('' + (values[i][iName] == null ? '' : values[i][iName])).trim();
-    if (nm !== name) continue;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i][2] !== round) continue;
+    if (list[i][0] !== name) continue;
     nameMatch = true;   // 이름+주차 일치 → 응시로 인정
-    if (phone4 && iPhone >= 0) {
-      var ph = ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim();
+    if (phone4 && list[i][1] != null) {
+      var ph = list[i][1];
       if (!ph || ph === phone4) return { ok: true, taken: true };   // 전화4까지 일치 → 즉시 확정
     } else {
       return { ok: true, taken: true };
@@ -208,6 +229,7 @@ function deleteRows_(idsStr) {
       if (rowSig_(values[rn - 1]) === want[rn]) { sh.deleteRow(rn); deleted++; }
       else skipped++;
     });
+    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e2) {}
     return { ok: true, deleted: deleted, skipped: skipped };
   } catch (err) {
     return { ok: false, error: String(err) };
@@ -247,4 +269,378 @@ function canon_(h) {
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+/** 주간 어휘 테스트 — 반점/키워드 채점 소급 보정 (1회 실행용)
+ *  「2026 어휘, 시작이 반이다(응답)」 시트의 확장 프로그램 > Apps Script에 붙여넣고
+ *  [반점보정_실행] 함수를 실행하세요. 실행 후 이 코드는 지워도 됩니다.
+ *  각 행의 이름·기존 점수가 일치할 때만 수정하며, 결과는 실행 로그에 남습니다. */
+function 반점보정_실행() {
+  var FIXES = [
+ {
+  "row": 393,
+  "name": "이주원a",
+  "oldScore": "8 / 17",
+  "newScore": "10 / 17",
+  "repl": [
+   [
+    "6. ✗ 정신이 얼떨떨하여 어찌할 바를 모르는 모양 → 정답: 얼떨떨하여, 모르는",
+    "6. ✓ 정신이 얼떨떨하여 어찌할 바를 모르는 모양"
+   ],
+   [
+    "9. ✗ 성격따위가 밝고 명랑하여 구김살이 없다 → 정답: 명랑, 구김살",
+    "9. ✓ 성격따위가 밝고 명랑하여 구김살이 없다"
+   ]
+  ]
+ },
+ {
+  "row": 456,
+  "name": "이태림",
+  "oldScore": "11 / 17",
+  "newScore": "12 / 17",
+  "repl": [
+   [
+    "9. ✗ 성격 따위가 밝고 명랑하여 구김살이 없다 → 정답: 명랑, 구김살",
+    "9. ✓ 성격 따위가 밝고 명랑하여 구김살이 없다"
+   ]
+  ]
+ },
+ {
+  "row": 475,
+  "name": "최은서b",
+  "oldScore": "15 / 17",
+  "newScore": "17 / 17",
+  "repl": [
+   [
+    "6. ✗ 얼떨떨하여/모르는 → 정답: 얼떨떨하여, 모르는",
+    "6. ✓ 얼떨떨하여/모르는"
+   ],
+   [
+    "9. ✗ 명랑하여/구김살 → 정답: 명랑, 구김살",
+    "9. ✓ 명랑하여/구김살"
+   ]
+  ]
+ },
+ {
+  "row": 806,
+  "name": "김지아",
+  "oldScore": "13 / 17",
+  "newScore": "14 / 17",
+  "repl": [
+   [
+    "4. ✗ 한계 최후의 → 정답: 한계, 최후",
+    "4. ✓ 한계 최후의"
+   ]
+  ]
+ },
+ {
+  "row": 860,
+  "name": "유채아",
+  "oldScore": "10 / 17",
+  "newScore": "11 / 17",
+  "repl": [
+   [
+    "4. ✗ 궁극의  한계 도달할 수 있는 최후의 단계 → 정답: 한계, 최후",
+    "4. ✓ 궁극의  한계 도달할 수 있는 최후의 단계"
+   ]
+  ]
+ },
+ {
+  "row": 881,
+  "name": "나세현",
+  "oldScore": "16 / 17",
+  "newScore": "17 / 17",
+  "repl": [
+   [
+    "4. ✗ 한계, 최후의 → 정답: 한계, 최후",
+    "4. ✓ 한계, 최후의"
+   ]
+  ]
+ },
+ {
+  "row": 944,
+  "name": "김건우",
+  "oldScore": "14 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "4. ✗ 한계,최후의 → 정답: 한계, 최후",
+    "4. ✓ 한계,최후의"
+   ]
+  ]
+ },
+ {
+  "row": 1094,
+  "name": "김상효",
+  "oldScore": "14 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "12. ✗ 알,꿩 → 정답: 꿩, 알",
+    "12. ✓ 알,꿩"
+   ]
+  ]
+ },
+ {
+  "row": 1118,
+  "name": "한세준",
+  "oldScore": "12 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1131,
+  "name": "송어진",
+  "oldScore": "10 / 17",
+  "newScore": "13 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩먹고 알먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩먹고 알먹기"
+   ],
+   [
+    "13. ✗ 도랑치고 가재잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑치고 가재잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1146,
+  "name": "김유하",
+  "oldScore": "12 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다. → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다."
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1148,
+  "name": "김도연",
+  "oldScore": "13 / 17",
+  "newScore": "16 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다. → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다."
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다. → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다."
+   ]
+  ]
+ },
+ {
+  "row": 1157,
+  "name": "배민서",
+  "oldScore": "11 / 17",
+  "newScore": "14 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑치고 가재잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑치고 가재잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1172,
+  "name": "김준섭",
+  "oldScore": "9 / 17",
+  "newScore": "12 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1186,
+  "name": "김상휘",
+  "oldScore": "12 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1305,
+  "name": "백예음",
+  "oldScore": "13 / 17",
+  "newScore": "16 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1330,
+  "name": "최현준",
+  "oldScore": "12 / 17",
+  "newScore": "15 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1337,
+  "name": "이서린",
+  "oldScore": "13 / 17",
+  "newScore": "16 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ },
+ {
+  "row": 1405,
+  "name": "양현서",
+  "oldScore": "11 / 17",
+  "newScore": "14 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이.매부 → 정답: 누이, 매부",
+    "11. ✓ 누이.매부"
+   ],
+   [
+    "12. ✗ 꿩.알 → 정답: 꿩, 알",
+    "12. ✓ 꿩.알"
+   ],
+   [
+    "13. ✗ 도랑.가재 → 정답: 도랑, 가재",
+    "13. ✓ 도랑.가재"
+   ]
+  ]
+ },
+ {
+  "row": 1406,
+  "name": "조수현",
+  "oldScore": "11 / 17",
+  "newScore": "14 / 17",
+  "repl": [
+   [
+    "11. ✗ 누이 좋고 매부 좋다 → 정답: 누이, 매부",
+    "11. ✓ 누이 좋고 매부 좋다"
+   ],
+   [
+    "12. ✗ 꿩 먹고 알 먹기 → 정답: 꿩, 알",
+    "12. ✓ 꿩 먹고 알 먹기"
+   ],
+   [
+    "13. ✗ 도랑 치고 가재 잡는다 → 정답: 도랑, 가재",
+    "13. ✓ 도랑 치고 가재 잡는다"
+   ]
+  ]
+ }
+];
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var done = 0, skip = [];
+  FIXES.forEach(function (f) {
+    var vals = sh.getRange(f.row, 1, 1, 11).getValues()[0];
+    var name = String(vals[1]).trim();
+    var score = String(vals[5]).replace(/\s+/g, '');
+    if (name !== f.name || score !== f.oldScore.replace(/\s+/g, '')) {
+      skip.push(f.row + '행 ' + f.name + ' (현재: ' + name + ' / ' + vals[5] + ') — 불일치, 건너뜀');
+      return;
+    }
+    var details = String(vals[10]);
+    var ok = true;
+    f.repl.forEach(function (p) { if (details.indexOf(p[0]) < 0) ok = false; });
+    if (!ok) { skip.push(f.row + '행 ' + f.name + ' — 상세 텍스트 불일치, 건너뜀'); return; }
+    f.repl.forEach(function (p) { details = details.replace(p[0], p[1]); });
+    sh.getRange(f.row, 6).setValue(f.newScore);
+    sh.getRange(f.row, 11).setValue(details);
+    done++;
+  });
+  Logger.log('보정 완료: ' + done + '건 / 대상 ' + FIXES.length + '건');
+  skip.forEach(function (s) { Logger.log('건너뜀: ' + s); });
+  SpreadsheetApp.getUi ? null : null;
 }
