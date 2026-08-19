@@ -166,7 +166,7 @@ tr.sel-on > td { background: #eef9f3; }
         showStatus('loading', opts.full ? '상세 포함 전체를 불러오는 중… (조금 걸려요)' : '결과를 불러오는 중…');
         var cb = 'shueguk_cb_' + Date.now();
         var done = false;
-        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '응답이 없습니다. URL과 배포(액세스: 모든 사용자)를 확인하세요.'); } }, opts.full ? 45000 : 15000);
+        var timer = setTimeout(function(){ if (!done){ done = true; cleanup(); showStatus('fail', '서버 응답이 늦어지고 있어요. 잠시 후 [새로고침]을 눌러 주세요. (접속이 몰리는 시간대에 발생할 수 있어요)'); } }, opts.full ? 60000 : 45000);
         window[cb] = function(resp){
             if (done) return; done = true; clearTimeout(timer); cleanup();
             if (!resp || resp.ok !== true){

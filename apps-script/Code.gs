@@ -88,6 +88,7 @@ function doPost(e) {
     HEADERS.forEach(function (h) { row[map[h]] = (data[h] != null ? data[h] : ''); });
     sh.appendRow(row);
     try { CacheService.getScriptCache().remove('takenIdx'); } catch (e) {}
+    clearLiteCache_();
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -108,10 +109,18 @@ function doGet(e) {
     payload = deleteRows_(p.ids || '');
   } else if (p.action === 'detail') {
     payload = detailRow_(p.row, p.sig);
-  } else {
+  } else if (p.lite === '1') {
     // lite=1: 목록에서 상세(details)를 뺀다 — 대시보드 첫 화면용(응답 1MB→수십 KB).
     // 상세는 행별 action=detail, CSV 내보내기는 lite 없이 전체 조회.
-    payload = { ok: true, rows: readRows_(p.lite === '1') };
+    // 접속이 몰릴 때 매번 시트 전체를 읽지 않도록 결과를 gzip으로 60초 캐시(제출·삭제 시 즉시 무효화).
+    var out2 = liteListJson_();
+    if (cb) {
+      return ContentService.createTextOutput(cb + '(' + out2 + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(out2).setMimeType(ContentService.MimeType.JSON);
+  } else {
+    payload = { ok: true, rows: readRows_(false) };
   }
   var out = JSON.stringify(payload);
   if (cb) {
@@ -125,6 +134,24 @@ function doGet(e) {
 /* 시트 → 행 객체 배열. 헤더 이름 기준으로 매핑.
  * 각 행에 시트 행번호(_row, 1-based)와 내용 해시(_sig)를 덧붙여
  * 대시보드가 안전하게 삭제 대상을 지정할 수 있게 한다. */
+var LITE_CACHE_KEY = 'liteRowsGz';
+function liteListJson_() {
+  var cache = CacheService.getScriptCache();
+  try {
+    var hit = cache.get(LITE_CACHE_KEY);
+    if (hit) return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(hit), 'application/x-gzip')).getDataAsString();
+  } catch (e) {}
+  var json = JSON.stringify({ ok: true, rows: readRows_(true) });
+  try {
+    var gz = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/octet-stream')).getBytes());
+    cache.put(LITE_CACHE_KEY, gz, 60);   // 100KB 초과 등이면 캐시 없이 진행
+  } catch (e2) {}
+  return json;
+}
+function clearLiteCache_() {
+  try { CacheService.getScriptCache().remove(LITE_CACHE_KEY); } catch (e) {}
+}
+
 function readRows_(lite) {
   var sh = getSheet_();
   var values = sh.getDataRange().getValues();
@@ -230,6 +257,7 @@ function deleteRows_(idsStr) {
       else skipped++;
     });
     try { CacheService.getScriptCache().remove('takenIdx'); } catch (e2) {}
+    clearLiteCache_();
     return { ok: true, deleted: deleted, skipped: skipped };
   } catch (err) {
     return { ok: false, error: String(err) };
