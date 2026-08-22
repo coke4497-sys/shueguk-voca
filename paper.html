@@ -725,6 +725,20 @@ input[type=number] { width: 72px; }
     built.flat.forEach(function (f) { items[f.num] = hwAnswer(f.q); });
     var payload = { action: 'saveHomework', data: { teacher: teacher, code: code, count: built.flat.length, schools: [], items: items } };
 
+    /* 수파베이스 미러 (2026-08-23 DB 이전) — H WORK 과제 미러(hwork_homeworks) 업서트.
+     * due 미포함이라 기존 마감일 유지. 실패해도 무해(일일 점검이 복구). */
+    function sbMirrorHomework(data){
+      try {
+        fetch('https://bangdbhqpphqqdwcledg.supabase.co/rest/v1/hwork_homeworks?on_conflict=teacher,code', {
+          method: 'POST',
+          headers: { 'apikey': 'sb_publishable_dE9d1KIbpgYaQkaS2MSrlg_-7SiRJuT',
+                     'Authorization': 'Bearer sb_publishable_dE9d1KIbpgYaQkaS2MSrlg_-7SiRJuT',
+                     'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{ teacher: data.teacher || '', code: data.code || '', data: data }])
+        }).catch(function(e){ console.warn('H WORK 과제 미러 실패 — 일일 점검이 복구', e); });
+      } catch (e) {}
+    }
+
     st.className = 'status';
     st.textContent = 'H WORK에 등록하는 중…';
     $('btnHwSave').disabled = true;
@@ -732,6 +746,7 @@ input[type=number] { width: 72px; }
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (res && res.ok) {
+          sbMirrorHomework(payload.data);
           st.className = 'status';
           st.textContent = '✓ 출제 완료 — 학생 화면에서 [' + teacher + ' / ' + code + '] (' + built.flat.length + '문항)를 선택해 응시할 수 있습니다. ' +
             '같은 제목으로 다시 출제하면 덮어쓰며, PDF는 아래 "최근 만든 시험"에서 언제든 다시 내려받을 수 있습니다.';
