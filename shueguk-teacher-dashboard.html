@@ -209,6 +209,33 @@ tr.sel-on > td { background: #eef9f3; }
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
 
+    /* ── 수파베이스 미러 (2026-08-23 DB 이전) — 삭제 성공 시 미러(voca_results)에서도 같은 행 삭제.
+     * 매칭은 ts(분)+이름+주차 기준. 실패해도 무해(일일 점검이 시트 기준으로 복구). */
+    var SB_REST = 'https://bangdbhqpphqqdwcledg.supabase.co/rest/v1';
+    var SB_KEY = 'sb_publishable_dE9d1KIbpgYaQkaS2MSrlg_-7SiRJuT';
+    function sbP2(n){ return ('0' + n).slice(-2); }
+    function sbNormTs(v){
+        var s = String(v == null ? '' : v).trim();
+        if (!s) return '';
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) return s.slice(0, 16);
+        var tm = Date.parse(s);
+        if (isNaN(tm)) return s;
+        var d = new Date(tm + 9 * 3600000);
+        return d.getUTCFullYear() + '-' + sbP2(d.getUTCMonth()+1) + '-' + sbP2(d.getUTCDate()) +
+               ' ' + sbP2(d.getUTCHours()) + ':' + sbP2(d.getUTCMinutes());
+    }
+    function sbMirrorVocaDelete(rows){
+        try {
+            var H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+            (rows || []).forEach(function(r){
+                var q = 'ts=eq.' + encodeURIComponent(sbNormTs(r.time)) +
+                        '&name=eq.' + encodeURIComponent(String(r.name || '')) +
+                        '&round=eq.' + encodeURIComponent(String(r.round == null ? '' : r.round));
+                fetch(SB_REST + '/voca_results?' + q, { method: 'DELETE', headers: H }).catch(function(){});
+            });
+        } catch (e) {}
+    }
+
     /* ===== 선택 삭제 (JSONP, action=delete) ===== */
     function deleteSelected(){
         var ids = Object.keys(selected);
@@ -224,6 +251,10 @@ tr.sel-on > td { background: #eef9f3; }
             if (!resp || resp.ok !== true){
                 showStatus('fail', '' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '삭제하지 못했습니다. Apps Script를 새 버전으로 재배포했는지 확인하세요.'));
                 return;
+            }
+            if (!resp.skipped) {
+                var idSet = {}; ids.forEach(function(id){ idSet[id] = 1; });
+                sbMirrorVocaDelete(ALL.filter(function(r){ return idSet[rowId(r)]; }));
             }
             selected = {};
             var msg = '' + (resp.deleted||0) + '건 삭제됨';
