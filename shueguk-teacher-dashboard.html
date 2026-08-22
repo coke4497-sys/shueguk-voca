@@ -23,7 +23,7 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 /* 요약 */
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
 .stat { background: white; border: 2px solid #C6D5D2; border-radius: 14px; padding: 14px; text-align: center; }
-.stat .big { font-family: 'Nanum Myeongjo', serif; font-size: 30px; font-weight: 800; color: #628C83; line-height: 1.1; }
+.stat .big { font-family: 'Nanum Myeongjo', serif; font-size: 30px; font-weight: 800; color: #9B8046; line-height: 1.1; }
 .stat .lbl { font-size: 12px; font-weight: 700; color: #6A716C; margin-top: 4px; }
 
 /* 컨트롤 */
@@ -31,9 +31,9 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
 .ctrl { display: flex; flex-direction: column; gap: 3px; }
 .ctrl label { font-size: 11px; font-weight: 700; color: #6A716C; }
 .ctrl select, .ctrl input { padding: 9px 10px; font-size: 13px; font-family: inherit; font-weight: 700; border: 2px solid #E8EAE7; border-radius: 9px; outline: none; color: #2C2F2D; background: white; -webkit-appearance: none; }
-.ctrl select:focus, .ctrl input:focus { border-color: #A6C1BB; }
-.btn { padding: 9px 16px; font-size: 13px; font-weight: 800; font-family: inherit; border: none; border-radius: 9px; background: #628C83; color: white; cursor: pointer; }
-.btn.ghost { background: white; color: #628C83; border: 2px solid #628C83; }
+.ctrl select:focus, .ctrl input:focus { border-color: #E5CE8F; }
+.btn { padding: 9px 16px; font-size: 13px; font-weight: 800; font-family: inherit; border: none; border-radius: 9px; background: #F0E0AC; color: #7A6224; cursor: pointer; } /* 어휘 포인트 = 연노랑 (2026-08-22) */
+.btn.ghost { background: white; color: #9B8046; border: 2px solid #E5CE8F; }
 a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .btn.danger { background: white; color: #DB4C39; border: 2px solid #EFA9A5; }
 .btn.danger:hover { background: #FADED9; }
@@ -47,7 +47,7 @@ th { background: #E9F0EF; color: #3A544E; font-weight: 800; font-size: 12px; pos
 tbody tr:hover { background: #F4F5F3; }
 tr.sel-on > td { background: #eef9f3; }
 .chk-cell { width: 34px; text-align: center; padding-right: 4px; padding-left: 12px; }
-.chk-cell input, th.chk-cell input { width: 16px; height: 16px; accent-color: #628C83; cursor: pointer; }
+.chk-cell input, th.chk-cell input { width: 16px; height: 16px; accent-color: #C9A94E; cursor: pointer; }
 .score-cell { font-weight: 800; color: #2C2F2D; }
 .pct { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-align: center; }
 .pct.hi { background: #E4F1EA; color: #276B4E; }
@@ -82,7 +82,7 @@ tr.sel-on > td { background: #eef9f3; }
 .part-table td.wk-cell { font-weight: 800; background: #FBFAF6; }
 .part-table td.p-cell { cursor: pointer; }
 .part-table td.p-cell:hover { background: #F4F5F3; }
-.part-table td.p-cell.p-on { outline: 2px solid #A6C1BB; outline-offset: -2px; background: #eef9f3; }
+.part-table td.p-cell.p-on { outline: 2px solid #E0C87E; outline-offset: -2px; background: #FBF5E2; }
 .part-table .frac { font-weight: 800; color: #2C2F2D; }
 .part-detail { margin-top: 10px; display: none; }
 .part-detail.show { display: block; }
