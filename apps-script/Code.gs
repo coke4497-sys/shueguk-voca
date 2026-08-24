@@ -56,6 +56,49 @@ function vocaStatus_() {
   return st;
 }
 
+/* ── 수파베이스 미러 (voca_results) ────────────────────────────────
+ * 시트가 원본이고 이건 DB 이전 준비용 읽기 미러다.
+ *
+ * 예전에는 학생 브라우저(test.html)에서 넣었는데 두 가지로 새고 있었다
+ * (2026-08-24 확인 — 시트 2,433건 vs 미러 2,425건, 빠진 8건 전부 당일 제출):
+ *   1. 제출 직후 학생이 창을 닫으면 미러 요청이 취소된다
+ *   2. 제출이 no-cors라 페이지는 백엔드 거절(closed·wrong_week)을 모른다 —
+ *      시트에 없는 행이 미러에만 들어갔다
+ * 이제 시트에 실제로 쓴 뒤 여기서(서버끼리) 넣으므로 둘 다 생기지 않는다.
+ *
+ * 실패해도 제출은 이미 시트에 저장된 뒤라 무해하다 — 일일 점검(audit_heal --voca)이
+ * 시트 기준으로 복구한다. 잠깐 끊긴 경우를 대비해 한 번만 더 시도한다. */
+var SB_REST = 'https://bangdbhqpphqqdwcledg.supabase.co/rest/v1';
+var SB_KEY  = 'sb_publishable_dE9d1KIbpgYaQkaS2MSrlg_-7SiRJuT';
+
+function sbMirrorVoca_(d) {
+  var body = JSON.stringify([{
+    ts:      sbStr_(d.time),     // 'yyyy-MM-dd HH:mm' — 페이지가 보낸 문자열 그대로 (시트와 일치)
+    name:    sbStr_(d.name),
+    school:  sbStr_(d.school),
+    grade:   sbStr_(d.grade),
+    phone4:  sbStr_(d.phone4),
+    round:   sbStr_(d.round),
+    score:   sbStr_(d.score),
+    details: sbStr_(d.details)
+  }]);
+  for (var try_ = 0; try_ < 2; try_++) {
+    try {
+      var res = UrlFetchApp.fetch(SB_REST + '/voca_results', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Prefer': 'return=minimal' },
+        payload: body,
+        muteHttpExceptions: true
+      });
+      var code = res.getResponseCode();
+      if (code >= 200 && code < 300) return true;
+    } catch (e) {}
+  }
+  return false;
+}
+function sbStr_(v) { return '' + (v == null ? '' : v); }
+
 /* 학생 제출 (test.html → fetch POST) — 헤더 이름에 맞춰 저장 */
 function doPost(e) {
   try {
@@ -87,6 +130,7 @@ function doPost(e) {
     for (var i = 0; i < width; i++) row.push('');
     HEADERS.forEach(function (h) { row[map[h]] = (data[h] != null ? data[h] : ''); });
     sh.appendRow(row);
+    try { sbMirrorVoca_(data); } catch (e3) {}   // 미러는 실패해도 제출에 영향 없음
     // 캐시를 비우지 않는다 — 새로 붙은 줄은 조회할 때 꼬리에서 읽어 잇는다.
     // (예전에는 여기서 비우는 바람에 제출이 몰리는 시간대에 캐시가 늘 비어 있었다)
     return json_({ ok: true });
