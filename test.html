@@ -546,23 +546,10 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
         setTimeout(function() { finalEl.scrollIntoView({ block: 'center' }); }, 300);
     }
 
-    /* ── 수파베이스 미러 (2026-08-23 DB 이전) — 전송 성공 시 미러(voca_results)에도 기록.
-     * 주차 판정·삭제는 기존 백엔드 그대로, 실패해도 무해(일일 점검이 시트 기준으로 복구). */
-    var SB_REST = 'https://bangdbhqpphqqdwcledg.supabase.co/rest/v1';
-    var SB_KEY = 'sb_publishable_dE9d1KIbpgYaQkaS2MSrlg_-7SiRJuT';
-    function sbMirrorVoca(p) {
-        try {
-            fetch(SB_REST + '/voca_results', {
-                method: 'POST',
-                headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
-                           'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify([{ ts: String(p.time || ''), name: String(p.name || ''),
-                    school: String(p.school || ''), grade: String(p.grade || ''),
-                    phone4: String(p.phone4 || ''), round: String(p.round || ''),
-                    score: String(p.score || ''), details: String(p.details || '') }])
-            }).catch(function(e){ console.warn('어휘 결과 미러 실패 — 일일 점검이 복구', e); });
-        } catch (e) {}
-    }
+    /* 수파베이스 미러(voca_results)는 이제 백엔드(doPost)가 넣는다 — 2026-08-24.
+     * 여기서 넣던 때는 (1) 제출 직후 창을 닫으면 요청이 취소되고 (2) 제출이 no-cors라
+     * 백엔드가 거절한 제출(지난 주차 등)도 미러에만 들어갔다. 시트에 실제로 쓴 뒤
+     * 서버끼리 넣도록 옮겨 둘 다 없앴다. */
 
     function sendResult(payload) {
         var box = $('send-status'), retryBtn = $('retry-btn');
@@ -573,7 +560,6 @@ body { font-family: 'Gowun Dodum', -apple-system, BlinkMacSystemFont, sans-serif
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
         }).then(function() {
-            sbMirrorVoca(payload);
             if (box) { box.className = 'send-status-box done'; box.innerHTML = IC.check + '선생님께 결과가 전송되었어요!'; }
         }).catch(function() {
             if (box) { box.className = 'send-status-box fail'; box.innerHTML = IC.alert + '전송에 실패했어요. 인터넷 확인 후 아래 버튼을 눌러주세요.'; }
