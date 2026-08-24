@@ -135,22 +135,55 @@ function doGet(e) {
  * 각 행에 시트 행번호(_row, 1-based)와 내용 해시(_sig)를 덧붙여
  * 대시보드가 안전하게 삭제 대상을 지정할 수 있게 한다. */
 var LITE_CACHE_KEY = 'liteRowsGz';
+var LITE_CACHE_N   = 'liteRowsGzN';   // 나눠 담은 조각 수
+var LITE_CHUNK     = 90000;           // CacheService 한 칸 상한(100KB)보다 여유 있게
+var LITE_MAX_CHUNK = 12;              // 뒷정리·조회에 쓸 최대 조각 수
+
+/* lite 목록 JSON. gzip+base64로 60초 캐시 — 저녁처럼 조회가 몰릴 때 시트를 매번 읽지 않는다.
+ * 캐시 한 칸은 100KB까지라, 제출이 쌓여 그 한 칸을 넘기면 예전에는 조용히 캐시가 꺼지고
+ * 매 요청이 시트 전체 읽기로 되돌아갔다(2026-08-24 기준 84KB — 한 칸 한계 코앞).
+ * 이제 90KB씩 조각내 여러 칸에 담아 데이터가 늘어도 캐시가 계속 동작한다. */
 function liteListJson_() {
   var cache = CacheService.getScriptCache();
   try {
-    var hit = cache.get(LITE_CACHE_KEY);
-    if (hit) return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(hit), 'application/x-gzip')).getDataAsString();
+    var n = parseInt(cache.get(LITE_CACHE_N), 10);
+    if (n >= 1) {
+      var keys = [];
+      for (var i = 0; i < n; i++) keys.push(LITE_CACHE_KEY + i);
+      var got = cache.getAll(keys), gzHit = '';
+      for (var j = 0; j < n; j++) {
+        var part = got[LITE_CACHE_KEY + j];
+        if (part == null) { gzHit = ''; break; }   // 한 조각이라도 만료됐으면 캐시 무시
+        gzHit += part;
+      }
+      if (gzHit) return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(gzHit), 'application/x-gzip')).getDataAsString();
+    }
   } catch (e) {}
   var json = JSON.stringify({ ok: true, rows: readRows_(true) });
   try {
     var gz = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/octet-stream')).getBytes());
-    cache.put(LITE_CACHE_KEY, gz, 60);   // 100KB 초과 등이면 캐시 없이 진행
+    var cnt = Math.ceil(gz.length / LITE_CHUNK);
+    if (cnt >= 1 && cnt <= LITE_MAX_CHUNK) {
+      var put = {};
+      for (var k = 0; k < cnt; k++) put[LITE_CACHE_KEY + k] = gz.substr(k * LITE_CHUNK, LITE_CHUNK);
+      cache.putAll(put, 60);
+      cache.put(LITE_CACHE_N, '' + cnt, 60);
+    }
   } catch (e2) {}
   return json;
 }
 function clearLiteCache_() {
-  try { CacheService.getScriptCache().remove(LITE_CACHE_KEY); } catch (e) {}
+  try {
+    var keys = [LITE_CACHE_N];
+    for (var i = 0; i < LITE_MAX_CHUNK; i++) keys.push(LITE_CACHE_KEY + i);
+    CacheService.getScriptCache().removeAll(keys);
+  } catch (e) {}
 }
+
+/* lite 목록에 담을 열 — 대시보드가 실제로 읽는 것만.
+ * 시트에 남아 있는 옛 빈 열('회차(숫자만 입력)'·'문항별 결과'·'제출 시각')이
+ * 응답의 3분의 1을 차지하고 있었다(603KB → 400KB). */
+var LITE_KEYS = { time: 1, name: 1, school: 1, grade: 1, phone4: 1, round: 1, score: 1 };
 
 function readRows_(lite) {
   var sh = getSheet_();
@@ -160,8 +193,12 @@ function readRows_(lite) {
   var rows = [];
   for (var i = 1; i < values.length; i++) {
     var obj = {};
-    for (var j = 0; j < keys.length; j++) obj[keys[j] || ('col' + j)] = values[i][j];
-    if (lite) obj.details = '';   // 상세는 빼고 보냄 (_sig는 상세 포함 전체 행으로 계산 — 삭제 대조용)
+    for (var j = 0; j < keys.length; j++) {
+      var k = keys[j] || ('col' + j);
+      if (lite && !LITE_KEYS[k]) continue;   // 상세·빈 옛 열은 빼고 보냄
+      obj[k] = values[i][j];
+    }
+    if (lite) obj.details = '';   // (_sig는 상세 포함 전체 행으로 계산 — 삭제 대조용)
     obj._row = i + 1;             // 시트상의 실제 행번호 (헤더가 1행)
     obj._sig = rowSig_(values[i]); // 행 내용 해시 (삭제 시 대조용)
     rows.push(obj);
