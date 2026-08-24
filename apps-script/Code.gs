@@ -87,8 +87,8 @@ function doPost(e) {
     for (var i = 0; i < width; i++) row.push('');
     HEADERS.forEach(function (h) { row[map[h]] = (data[h] != null ? data[h] : ''); });
     sh.appendRow(row);
-    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e) {}
-    clearLiteCache_();
+    // 캐시를 비우지 않는다 — 새로 붙은 줄은 조회할 때 꼬리에서 읽어 잇는다.
+    // (예전에는 여기서 비우는 바람에 제출이 몰리는 시간대에 캐시가 늘 비어 있었다)
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -105,6 +105,10 @@ function doGet(e) {
     payload = checkTaken_(p.name, p.phone4, p.round);
   } else if (p.key !== ACCESS_KEY) {
     payload = { ok: false, error: 'unauthorized' };
+  } else if (p.action === 'fresh') {
+    // 시트를 손으로 고친 뒤처럼 캐시를 강제로 다시 만들 때 (?key=…&action=fresh)
+    clearLiteCache_(); clearTakenCache_();
+    payload = { ok: true, cleared: true };
   } else if (p.action === 'delete') {
     payload = deleteRows_(p.ids || '');
   } else if (p.action === 'detail') {
@@ -135,46 +139,90 @@ function doGet(e) {
  * 각 행에 시트 행번호(_row, 1-based)와 내용 해시(_sig)를 덧붙여
  * 대시보드가 안전하게 삭제 대상을 지정할 수 있게 한다. */
 var LITE_CACHE_KEY = 'liteRowsGz';
-var LITE_CACHE_N   = 'liteRowsGzN';   // 나눠 담은 조각 수
-var LITE_CHUNK     = 90000;           // CacheService 한 칸 상한(100KB)보다 여유 있게
-var LITE_MAX_CHUNK = 12;              // 뒷정리·조회에 쓸 최대 조각 수
+var LITE_CACHE_N   = 'liteRowsGzN';    // 나눠 담은 조각 수
+var LITE_CACHE_ROW = 'liteRowsGzLast'; // 그 캐시를 만들 때 시트의 마지막 행
+var LITE_CHUNK     = 90000;            // CacheService 한 칸 상한(100KB)보다 여유 있게
+var LITE_MAX_CHUNK = 12;               // 뒷정리·조회에 쓸 최대 조각 수
+var LITE_TTL       = 21600;            // 6시간 (CacheService 최대). 새 제출은 꼬리만 읽어 붙이므로 길게 둔다
+var LITE_TAIL_MAX  = 400;              // 캐시 이후 늘어난 줄이 이보다 많으면 통째로 다시 만든다
 
-/* lite 목록 JSON. gzip+base64로 60초 캐시 — 저녁처럼 조회가 몰릴 때 시트를 매번 읽지 않는다.
- * 캐시 한 칸은 100KB까지라, 제출이 쌓여 그 한 칸을 넘기면 예전에는 조용히 캐시가 꺼지고
- * 매 요청이 시트 전체 읽기로 되돌아갔다(2026-08-24 기준 84KB — 한 칸 한계 코앞).
- * 이제 90KB씩 조각내 여러 칸에 담아 데이터가 늘어도 캐시가 계속 동작한다. */
+/* lite 목록 JSON — 시트를 통째로 다시 읽지 않는다.
+ *
+ * 예전에는 제출이 올 때마다(doPost) 캐시를 통째로 비웠다. 그래서 학생들이 제출하는
+ * 저녁 시간대 — 교사가 결과를 확인하는 바로 그 시간 — 에는 캐시가 늘 비어 있어
+ * 조회할 때마다 시트 2,400줄을 처음부터 읽었고, 6초에서 80초까지 걸렸다
+ * (2026-08-24 측정. 전송량이 아니라 시트 읽기가 원인).
+ *
+ * 이제 캐시에 '만들 때의 마지막 행'을 함께 적어 두고, 그 뒤에 늘어난 줄만
+ * 꼬리에서 읽어 이어 붙인다. 제출이 아무리 들어와도 캐시는 살아 있다.
+ * 줄이 지워지면(행 번호가 밀린다) deleteRows_ 가 캐시를 비워 다시 만들게 한다. */
 function liteListJson_() {
   var cache = CacheService.getScriptCache();
+  var sh = getSheet_();
+  var last = sh.getLastRow();
+  var base = liteCacheRead_(cache);
+  if (base) {
+    if (base.lastRow === last) return base.json;                       // 그대로
+    if (base.lastRow < last && (last - base.lastRow) <= LITE_TAIL_MAX) {
+      var tail = readRowsRange_(sh, base.lastRow + 1, last, true);     // 새 줄만 읽어 붙임
+      if (!tail.length) return base.json;
+      var merged = appendRowsJson_(base.json, tail);
+      if (merged) return merged;
+    }
+  }
+  var json = JSON.stringify({ ok: true, rows: readRows_(true) });      // 통째로 다시
+  liteCacheWrite_(cache, json, last);
+  return json;
+}
+
+/* 이미 만들어 둔 목록 JSON 끝에 행들을 이어 붙인다 (다시 파싱하지 않도록 문자열로).
+ * 모양이 예상과 다르면 null 을 돌려 호출부가 통째로 다시 만들게 한다. */
+function appendRowsJson_(json, rows) {
+  if (!json || json.slice(-2) !== ']}') return null;
+  var head = json.slice(0, -2);
+  var inner = JSON.stringify(rows);
+  inner = inner.slice(1, -1);                                          // 바깥 [ ] 제거
+  return head + (head.slice(-1) === '[' ? '' : ',') + inner + ']}';
+}
+
+function liteCacheRead_(cache) {
   try {
     var n = parseInt(cache.get(LITE_CACHE_N), 10);
-    if (n >= 1) {
-      var keys = [];
-      for (var i = 0; i < n; i++) keys.push(LITE_CACHE_KEY + i);
-      var got = cache.getAll(keys), gzHit = '';
-      for (var j = 0; j < n; j++) {
-        var part = got[LITE_CACHE_KEY + j];
-        if (part == null) { gzHit = ''; break; }   // 한 조각이라도 만료됐으면 캐시 무시
-        gzHit += part;
-      }
-      if (gzHit) return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(gzHit), 'application/x-gzip')).getDataAsString();
+    var lastRow = parseInt(cache.get(LITE_CACHE_ROW), 10);
+    if (!(n >= 1) || !(lastRow >= 1)) return null;
+    var keys = [];
+    for (var i = 0; i < n; i++) keys.push(LITE_CACHE_KEY + i);
+    var got = cache.getAll(keys), gz = '';
+    for (var j = 0; j < n; j++) {
+      var part = got[LITE_CACHE_KEY + j];
+      if (part == null) return null;                                   // 한 조각이라도 만료면 무시
+      gz += part;
     }
-  } catch (e) {}
-  var json = JSON.stringify({ ok: true, rows: readRows_(true) });
+    return {
+      json: Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(gz), 'application/x-gzip')).getDataAsString(),
+      lastRow: lastRow
+    };
+  } catch (e) { return null; }
+}
+
+/* 캐시 한 칸은 100KB까지라 90KB씩 조각내 여러 칸에 담는다.
+ * (한 칸을 넘기면 put 이 조용히 실패해 모든 조회가 시트 전체 읽기로 되돌아간다) */
+function liteCacheWrite_(cache, json, lastRow) {
   try {
     var gz = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/octet-stream')).getBytes());
     var cnt = Math.ceil(gz.length / LITE_CHUNK);
-    if (cnt >= 1 && cnt <= LITE_MAX_CHUNK) {
-      var put = {};
-      for (var k = 0; k < cnt; k++) put[LITE_CACHE_KEY + k] = gz.substr(k * LITE_CHUNK, LITE_CHUNK);
-      cache.putAll(put, 60);
-      cache.put(LITE_CACHE_N, '' + cnt, 60);
-    }
-  } catch (e2) {}
-  return json;
+    if (!(cnt >= 1 && cnt <= LITE_MAX_CHUNK)) return;
+    var put = {};
+    for (var k = 0; k < cnt; k++) put[LITE_CACHE_KEY + k] = gz.substr(k * LITE_CHUNK, LITE_CHUNK);
+    cache.putAll(put, LITE_TTL);
+    cache.put(LITE_CACHE_N, '' + cnt, LITE_TTL);
+    cache.put(LITE_CACHE_ROW, '' + lastRow, LITE_TTL);
+  } catch (e) {}
 }
+
 function clearLiteCache_() {
   try {
-    var keys = [LITE_CACHE_N];
+    var keys = [LITE_CACHE_N, LITE_CACHE_ROW];
     for (var i = 0; i < LITE_MAX_CHUNK; i++) keys.push(LITE_CACHE_KEY + i);
     CacheService.getScriptCache().removeAll(keys);
   } catch (e) {}
@@ -189,9 +237,23 @@ function readRows_(lite) {
   var sh = getSheet_();
   var values = sh.getDataRange().getValues();
   if (values.length < 2) return [];
-  var keys = values[0].map(canon_);
+  return buildRows_(values[0].map(canon_), values.slice(1), 2, lite);
+}
+
+/* 시트의 일부 구간만 읽어 같은 모양으로 만든다 (새 제출 꼬리 읽기용). */
+function readRowsRange_(sh, fromRow, toRow, lite) {
+  if (!(toRow >= fromRow) || fromRow < 2) return [];
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 1) return [];
+  var keys = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(canon_);
+  var values = sh.getRange(fromRow, 1, toRow - fromRow + 1, lastCol).getValues();
+  return buildRows_(keys, values, fromRow, lite);
+}
+
+/* 값 배열 → 행 객체 배열. firstRow 는 values[0] 이 시트의 몇 번째 행인지. */
+function buildRows_(keys, values, firstRow, lite) {
   var rows = [];
-  for (var i = 1; i < values.length; i++) {
+  for (var i = 0; i < values.length; i++) {
     var obj = {};
     for (var j = 0; j < keys.length; j++) {
       var k = keys[j] || ('col' + j);
@@ -199,7 +261,7 @@ function readRows_(lite) {
       obj[k] = values[i][j];
     }
     if (lite) obj.details = '';   // (_sig는 상세 포함 전체 행으로 계산 — 삭제 대조용)
-    obj._row = i + 1;             // 시트상의 실제 행번호 (헤더가 1행)
+    obj._row = firstRow + i;      // 시트상의 실제 행번호 (헤더가 1행)
     obj._sig = rowSig_(values[i]); // 행 내용 해시 (삭제 시 대조용)
     rows.push(obj);
   }
@@ -219,30 +281,54 @@ function detailRow_(rowNo, sig) {
   return { ok: true, row: rowNo, details: iD >= 0 ? '' + (v[iD] == null ? '' : v[iD]) : '' };
 }
 
-/* 응시 여부 조회용 [이름, 전화4, 주차] 목록 — 60초 캐시.
+/* 응시 여부 조회용 [이름, 전화4, 주차] 목록.
  * 슈퍼스타 개별 페이지가 열릴 때마다 taken 조회가 오는데, 접속이 몰리면
- * 매번 시트 전체를 읽다가 서버가 밀리므로 압축 목록만 캐시해 둔다.
- * (새 제출이 오면 doPost 에서 즉시 캐시를 비워 최신을 유지) */
+ * 매번 시트 전체를 읽다가 서버가 밀리므로 목록을 캐시해 둔다.
+ * lite 목록과 같은 이유로 제출 때 캐시를 비우지 않고 꼬리만 읽어 잇는다
+ * (학생 제출이 몰리는 시간이 곧 개별 페이지가 몰리는 시간이라, 비우면 캐시가 없는 것과 같다). */
+var TAKEN_TTL      = 21600;   // 6시간
+var TAKEN_TAIL_MAX = 400;
 function takenIndex_() {
   var cache = CacheService.getScriptCache();
-  var hit = cache.get('takenIdx');
-  if (hit) return JSON.parse(hit);
   var sh = getSheet_();
-  var values = sh.getDataRange().getValues();
-  var list = [];
-  if (values.length >= 2) {
-    var keys = values[0].map(canon_);
-    var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
-    for (var i = 1; i < values.length; i++) {
-      list.push([
-        ('' + (iName  >= 0 && values[i][iName]  != null ? values[i][iName]  : '')).trim(),
-        (iPhone >= 0 ? ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim() : null),
-        ('' + (iRound >= 0 && values[i][iRound] != null ? values[i][iRound] : '')).trim()
-      ]);
+  var last = sh.getLastRow();
+  var list = null, cachedLast = 0;
+  try {
+    var hit = cache.get('takenIdx'), hr = parseInt(cache.get('takenIdxRow'), 10);
+    if (hit && hr >= 1) { list = JSON.parse(hit); cachedLast = hr; }
+  } catch (e) { list = null; }
+  if (list) {
+    if (cachedLast === last) return list;
+    if (cachedLast < last && (last - cachedLast) <= TAKEN_TAIL_MAX) {
+      return list.concat(takenRange_(sh, cachedLast + 1, last));
     }
   }
-  try { cache.put('takenIdx', JSON.stringify(list), 60); } catch (e) {}  // 100KB 초과 등이면 캐시 없이 진행
+  var out = takenRange_(sh, 2, last);
+  // 100KB 초과 등이면 캐시 없이 진행
+  try { cache.put('takenIdx', JSON.stringify(out), TAKEN_TTL); cache.put('takenIdxRow', '' + last, TAKEN_TTL); } catch (e2) {}
+  return out;
+}
+
+function takenRange_(sh, fromRow, toRow) {
+  if (!(toRow >= fromRow) || fromRow < 2) return [];
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 1) return [];
+  var keys = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(canon_);
+  var iName = keys.indexOf('name'), iPhone = keys.indexOf('phone4'), iRound = keys.indexOf('round');
+  var values = sh.getRange(fromRow, 1, toRow - fromRow + 1, lastCol).getValues();
+  var list = [];
+  for (var i = 0; i < values.length; i++) {
+    list.push([
+      ('' + (iName  >= 0 && values[i][iName]  != null ? values[i][iName]  : '')).trim(),
+      (iPhone >= 0 ? ('' + (values[i][iPhone] == null ? '' : values[i][iPhone])).trim() : null),
+      ('' + (iRound >= 0 && values[i][iRound] != null ? values[i][iRound] : '')).trim()
+    ]);
+  }
   return list;
+}
+
+function clearTakenCache_() {
+  try { CacheService.getScriptCache().removeAll(['takenIdx', 'takenIdxRow']); } catch (e) {}
 }
 
 /* 학생 본인 응시 여부 확인 (이름+주차, 전화4는 보조). 데이터는 반환하지 않고 boolean 만.
@@ -293,7 +379,7 @@ function deleteRows_(idsStr) {
       if (rowSig_(values[rn - 1]) === want[rn]) { sh.deleteRow(rn); deleted++; }
       else skipped++;
     });
-    try { CacheService.getScriptCache().remove('takenIdx'); } catch (e2) {}
+    clearTakenCache_();   // 행 번호가 밀리므로 두 캐시 모두 다시 만든다
     clearLiteCache_();
     return { ok: true, deleted: deleted, skipped: skipped };
   } catch (err) {
