@@ -24,6 +24,33 @@ var HEADERS = ['time', 'name', 'school', 'grade', 'phone4', 'round', 'score', 'd
 // 리포트 Apps Script의 열린 주차 조회 주소 (test.html의 STATUS_URL과 동일)
 var STATUS_URL = 'https://script.google.com/macros/s/AKfycbzhCncBwn-JlqXARC3wfrWUCuNHzlNK2df0bdhx-w78Xr8mzYUcIYZOJdRi9N4bHtsb/exec?action=vocaStatus';
 
+/* ── 편집기에서 한 번만 실행하는 권한 승인 함수 ──────────────────
+ * 이 스크립트는 UrlFetchApp(외부 서비스 연결)을 쓴다:
+ *   - vocaStatus_  : 열린 주차 조회 → 지난 주차 제출 차단(#34)
+ *   - sbMirrorVoca_: 수파베이스 미러 기록
+ * 그런데 소유자가 그 권한을 승인하기 전까지 **배포본에서 조용히 실패한다**
+ * (오류도 안 나고 그냥 아무 일도 일어나지 않는다 — 2026-08-25 확인:
+ *  지난 주차 제출이 그대로 기록되고 있었고 미러도 안 들어갔다).
+ *
+ * 고치는 법: 편집기에서 이 함수를 한 번 실행 → 권한 요청이 뜨면 허용.
+ * 그 뒤로는 배포본도 정상 동작한다(승인은 버전이 아니라 계정에 붙는다).
+ * 아래 로그에 열린 주차와 미러 응답이 찍히면 성공. */
+function 권한승인() {
+  var out = [];
+  try {
+    out.push('열린 주차 조회: ' + UrlFetchApp.fetch(STATUS_URL, { muteHttpExceptions: true }).getContentText());
+  } catch (e) { out.push('열린 주차 조회 실패: ' + e); }
+  try {
+    var res = UrlFetchApp.fetch(SB_REST + '/voca_results?select=id&limit=1', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }, muteHttpExceptions: true
+    });
+    out.push('미러 연결: ' + res.getResponseCode() + ' ' + res.getContentText());
+  } catch (e2) { out.push('미러 연결 실패: ' + e2); }
+  var msg = out.join('\n');
+  Logger.log(msg);
+  return msg;
+}
+
 /* 결과 시트 가져오기 (완전히 빈 시트면 헤더 생성) */
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -77,8 +104,8 @@ function sbMirrorVoca_(d) {
     name:    sbStr_(d.name),
     school:  sbStr_(d.school),
     grade:   sbStr_(d.grade),
-    phone4:  sbStr_(d.phone4),
-    round:   sbStr_(d.round),
+    phone4:  sbNum_(d.phone4),   // 시트가 숫자로 바꾸며 앞의 0을 지우므로 똑같이 맞춘다('0913'→'913')
+    round:   sbNum_(d.round),
     score:   sbStr_(d.score),
     details: sbStr_(d.details)
   }]);
@@ -98,6 +125,15 @@ function sbMirrorVoca_(d) {
   return false;
 }
 function sbStr_(v) { return '' + (v == null ? '' : v); }
+
+/* 시트에 숫자로 저장되는 칸(전화 뒤 4자리·주차)을 시트와 같은 표기로 맞춘다.
+ * 학생이 '0913'을 넣으면 시트는 숫자 913으로 바꿔 앞의 0을 잃는데,
+ * 미러가 '0913'을 그대로 담으면 시트와 어긋나 일일 점검이 매번 고치게 된다
+ * (2026-08-25 실제 발생 — 한예림 7주차). */
+function sbNum_(v) {
+  var t = ('' + (v == null ? '' : v)).trim();
+  return /^\d+$/.test(t) ? '' + parseInt(t, 10) : t;
+}
 
 /* 학생 제출 (test.html → fetch POST) — 헤더 이름에 맞춰 저장 */
 function doPost(e) {
