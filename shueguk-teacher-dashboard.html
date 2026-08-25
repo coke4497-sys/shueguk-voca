@@ -71,6 +71,7 @@ tr.sel-on > td { background: #eef9f3; }
 .status.loading { background: #F4F5F3; color: #6A716C; border: 1.5px solid #E8EAE7; }
 .status.fail { background: #FADED9; color: #992F20; border: 1.5px solid #EFA9A5; }
 .muted { color: #8B928C; font-size: 12px; }
+.sync-note { margin-top: 8px; padding: 8px 11px; border-radius: 8px; font-size: 12.5px; background: #FAF3DC; color: #6B5A1E; }
 .row-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 
 /* 주차별 참여율 */
@@ -146,6 +147,7 @@ tr.sel-on > td { background: #eef9f3; }
             <span class="more-note" id="more-note"></span>
         </div>
     </div>
+    <div class="sync-note" id="sync-note" style="display:none;"></div>
     <div class="row-flex" style="margin-top:8px;">
         <span class="muted" id="count-note"></span>
         <span class="muted">정렬: 최근 제출 순 · 상세에서 틀린 문항은 빨간색</span>
@@ -162,9 +164,64 @@ tr.sel-on > td { background: #eef9f3; }
     var ALL = [];     // 전체 행
     var VIEW = [];    // 현재 필터로 보이는 행
     var selected = {};// 선택된 행 (key: _row:_sig)
+    var SHEET_READY = false;   // 원본(시트) 목록이 도착했나 — 도착 전엔 선택·삭제를 막는다
     function $(id){ return document.getElementById(id); }
     function rowId(r){ return r._row + ':' + r._sig; }
     function selCount(){ return Object.keys(selected).length; }
+
+    /* ── 첫 화면은 수파베이스에서 (2026-08-25) ─────────────────────
+     * 시트 조회는 구글 서버가 시트를 읽는 시간 때문에 2~4초가 걸린다(제출이 몰리면 더).
+     * 미러(voca_results)는 같은 내용을 1초 안에 준다 — 그래서 화면은 미러로 먼저 그리고,
+     * 원본인 시트 목록은 뒤에서 마저 받아 대조한다.
+     *
+     * 삭제는 시트의 행번호·해시(_row/_sig)가 있어야 하므로, 시트가 도착하기 전에는
+     * 체크박스를 잠가 둔다. 도착하면 같은 줄에 _row/_sig를 붙이고 그대로 풀어 준다
+     * (내용이 같으면 다시 그리지 않아 화면이 흔들리지 않는다).
+     * 어긋나면 원본인 시트 쪽으로 다시 그리고 몇 건 다른지 알려 준다. */
+    var SB_PAGE = 1000;   // 수파베이스 한 번에 주는 최대 줄 수
+
+    function loadFast(){
+        var url = SB_REST + '/voca_results?select=id,ts,name,school,grade,phone4,round,score' +
+                  '&order=id.asc&limit=' + SB_PAGE + '&offset=';
+        var H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+        function page(off){
+            return fetch(url + off, { headers: H, cache: 'no-store' })
+                .then(function(r){ if (!r.ok) throw new Error('sb ' + r.status); return r.json(); });
+        }
+        /* 한 번에 1000줄까지만 오므로 여러 쪽을 나눠 받는데, 반드시 **동시에** 받는다.
+         * 차례로 받으면 왕복이 쌓여 시트 조회보다 느려진다(2026-08-25 측정에서 실제로 그랬다). */
+        var out = [];
+        function grab(from, span){
+            var jobs = [];
+            for (var i = 0; i < span; i++) jobs.push(page(from + i * SB_PAGE));
+            return Promise.all(jobs).then(function(pages){
+                pages.forEach(function(rows){ out = out.concat(rows); });
+                var last = pages[pages.length - 1];
+                if (last.length === SB_PAGE && out.length < 20000) return grab(from + span * SB_PAGE, span);
+            });
+        }
+        grab(0, 4).then(function(){
+            if (SHEET_READY || !out.length) return;   // 시트가 이미 왔으면 원본이 우선
+            ALL = withKeys(out.map(function(r){
+                return normalizeRow({ time: r.ts, name: r.name, school: r.school, grade: r.grade,
+                                      phone4: r.phone4, round: r.round, score: r.score, details: '' });
+            }));
+            buildFilters(); applyFilters();
+            renderParticipation();
+        }).catch(function(){ /* 실패해도 무해 — 시트 조회가 화면을 그린다 */ });
+    }
+
+    /* 두 곳에서 온 같은 줄을 잇기 위한 키 (같은 내용이 여러 번이면 #1,#2…) */
+    function keyOf(r){ return r.timeDisplay + '|' + r.name + '|' + r.round + '|' + r.score; }
+    function withKeys(rows){
+        var seen = {};
+        rows.forEach(function(r){
+            var k = keyOf(r);
+            seen[k] = (seen[k] || 0) + 1;
+            r._key = k + '#' + seen[k];
+        });
+        return rows;
+    }
 
     /* ===== JSONP 로더 ===== */
     function loadData(opts){
@@ -179,8 +236,17 @@ tr.sel-on > td { background: #eef9f3; }
                 showStatus('fail', '' + (resp && resp.error === 'unauthorized' ? '비밀키(ACCESS_KEY)가 일치하지 않습니다.' : '데이터를 가져오지 못했습니다.'));
                 return;
             }
-            ALL = (resp.rows || []).map(normalizeRow);
-            if (opts.full) ALL.forEach(function(r){ r._hasDetails = true; });
+            var sheetRows = withKeys((resp.rows || []).map(normalizeRow));
+            if (opts.full) sheetRows.forEach(function(r){ r._hasDetails = true; });
+            SHEET_READY = true;
+            if (!opts.full && attachToFast(sheetRows)){
+                // 미러로 그려 둔 화면과 내용이 같다 — 행번호·해시만 붙이고 다시 그리지 않는다
+                unlockChecks();
+                showDiff(0);
+                if (opts.done) opts.done();
+                return;
+            }
+            ALL = sheetRows;
             pruneSelection();
             buildFilters(); applyFilters();
             renderParticipation();
@@ -192,6 +258,46 @@ tr.sel-on > td { background: #eef9f3; }
         s.onerror = function(){ if (!done){ done = true; clearTimeout(timer); cleanup(); showStatus('fail', '스크립트를 불러오지 못했습니다. URL을 확인하세요.'); } };
         document.body.appendChild(s);
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
+    }
+
+    /* 미러로 그려 둔 줄에 시트의 행번호·해시를 붙인다.
+     * 전부 짝이 맞으면 true (다시 그릴 필요 없음), 하나라도 어긋나면 false. */
+    function attachToFast(sheetRows){
+        if (!ALL.length) return false;                 // 미러가 아직 안 왔을 뿐 — 어긋난 게 아니다
+        if (ALL.length !== sheetRows.length) { showDiff(sheetRows.length - ALL.length); return false; }
+        var by = {};
+        sheetRows.forEach(function(r){ (by[r._key] = by[r._key] || []).push(r); });
+        for (var i = 0; i < ALL.length; i++){
+            var m = by[ALL[i]._key];
+            if (!m || !m.length) { showDiff(null); return false; }
+            var sr = m.shift();
+            ALL[i]._row = sr._row; ALL[i]._sig = sr._sig;
+        }
+        return true;
+    }
+
+    /* 시트가 도착하기 전 잠가 둔 체크박스를 푼다 (다시 그리지 않고 그 자리에서) */
+    function unlockChecks(){
+        $('tbody').querySelectorAll('.row-chk').forEach(function(c){
+            var i = parseInt(c.getAttribute('data-i'), 10);
+            var r = VIEW[i];
+            if (!r || !r._row) return;
+            c.disabled = false;
+            c.setAttribute('data-id', rowId(r));
+        });
+        $('chk-all').disabled = false;
+        var n = $('sync-note'); if (n) n.style.display = 'none';
+    }
+
+    /* 미러와 시트가 어긋나면 알려 준다 (0이면 표시를 지운다) */
+    function showDiff(n){
+        var el = $('sync-note'); if (!el) return;
+        if (!n){ el.style.display = 'none'; return; }
+        el.style.display = '';
+        el.className = 'sync-note warn';
+        el.textContent = typeof n === 'number'
+            ? '미러와 원본(시트)이 ' + Math.abs(n) + '건 달라 원본 기준으로 다시 불러왔어요.'
+            : '미러와 원본(시트)이 달라 원본 기준으로 다시 불러왔어요.';
     }
 
     /* ===== 행별 상세 조회 (JSONP, action=detail) — 목록은 lite라 상세가 없음 ===== */
@@ -366,10 +472,12 @@ tr.sel-on > td { background: #eef9f3; }
     var shown = 0;   // 지금 화면에 그려 둔 VIEW 줄 수
 
     function rowHtml(r, i){
-        var id = rowId(r);
-        var on = !!selected[id];
+        var ready = !!r._row;                      // 시트 정보가 붙은 줄만 선택·삭제 가능
+        var id = ready ? rowId(r) : '';
+        var on = ready && !!selected[id];
         return '<tr' + (on ? ' class="sel-on"' : '') + '>' +
-            '<td class="chk-cell"><input type="checkbox" class="row-chk" data-id="' + escAttr(id) + '"' + (on ? ' checked' : '') + '></td>' +
+            '<td class="chk-cell"><input type="checkbox" class="row-chk" data-i="' + i + '" data-id="' + escAttr(id) + '"' +
+                (on ? ' checked' : '') + (ready ? '' : ' disabled title="원본 확인 중이에요 — 잠시 뒤 선택할 수 있어요"') + '></td>' +
             '<td>' + esc(r.timeDisplay) + '</td><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.school) + '</td>' +
             '<td>' + esc(r.grade) + '</td><td>' + esc(r.phone4) + '</td><td>' + esc(r.round) + (r.round ? '주차' : '') + '</td>' +
             '<td class="score-cell">' + esc(r.score) + '</td>' +
@@ -436,6 +544,7 @@ tr.sel-on > td { background: #eef9f3; }
         var c = e.target;
         if (!c || !c.classList || !c.classList.contains('row-chk')) return;
         var id = c.getAttribute('data-id');
+        if (!id) { c.checked = false; return; }   // 원본 도착 전 줄
         if (c.checked) selected[id] = 1; else delete selected[id];
         var tr = c.closest('tr'); if (tr) tr.className = c.checked ? 'sel-on' : '';
         syncSelUI();
@@ -583,20 +692,22 @@ tr.sel-on > td { background: #eef9f3; }
     /* ===== 이벤트 ===== */
     ['f-grade','f-round'].forEach(function(id){ $(id).addEventListener('change', applyFilters); });
     $('f-name').addEventListener('input', applyFilters);
-    $('btn-refresh').addEventListener('click', loadData);
+    $('btn-refresh').addEventListener('click', function(){ SHEET_READY = false; loadFast(); loadData(); });
     $('btn-csv').addEventListener('click', downloadCSV);
     $('btn-delete').addEventListener('click', deleteSelected);
     $('chk-all').addEventListener('change', function(){
         var on = $('chk-all').checked;
         // 선택은 화면에 그려진 줄뿐 아니라 지금 필터에 걸린 전체(VIEW)에 적용된다
-        VIEW.forEach(function(r){ var id = rowId(r); if (on) selected[id] = 1; else delete selected[id]; });
+        if (!SHEET_READY){ $('chk-all').checked = false; return; }
+        VIEW.forEach(function(r){ if (!r._row) return; var id = rowId(r); if (on) selected[id] = 1; else delete selected[id]; });
         $('tbody').querySelectorAll('.row-chk').forEach(function(c){
             c.checked = on;
             var tr = c.closest('tr'); if (tr) tr.className = on ? 'sel-on' : '';
         });
         syncSelUI();
     });
-    loadData();
+    loadFast();        // 미러에서 먼저 그리고
+    loadData();        // 원본(시트)으로 대조·확정
     loadPartRoster();
 })();
 </script>
