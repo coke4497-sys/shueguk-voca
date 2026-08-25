@@ -104,8 +104,8 @@ function sbMirrorVoca_(d) {
     name:    sbStr_(d.name),
     school:  sbStr_(d.school),
     grade:   sbStr_(d.grade),
-    phone4:  sbStr_(d.phone4),
-    round:   sbStr_(d.round),
+    phone4:  sbNum_(d.phone4),   // 시트가 숫자로 바꾸며 앞의 0을 지우므로 똑같이 맞춘다('0913'→'913')
+    round:   sbNum_(d.round),
     score:   sbStr_(d.score),
     details: sbStr_(d.details)
   }]);
@@ -125,6 +125,15 @@ function sbMirrorVoca_(d) {
   return false;
 }
 function sbStr_(v) { return '' + (v == null ? '' : v); }
+
+/* 시트에 숫자로 저장되는 칸(전화 뒤 4자리·주차)을 시트와 같은 표기로 맞춘다.
+ * 학생이 '0913'을 넣으면 시트는 숫자 913으로 바꿔 앞의 0을 잃는데,
+ * 미러가 '0913'을 그대로 담으면 시트와 어긋나 일일 점검이 매번 고치게 된다
+ * (2026-08-25 실제 발생 — 한예림 7주차). */
+function sbNum_(v) {
+  var t = ('' + (v == null ? '' : v)).trim();
+  return /^\d+$/.test(t) ? '' + parseInt(t, 10) : t;
+}
 
 /* 학생 제출 (test.html → fetch POST) — 헤더 이름에 맞춰 저장 */
 function doPost(e) {
