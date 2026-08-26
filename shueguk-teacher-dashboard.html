@@ -776,10 +776,38 @@ tr.sel-on > td { background: #eef9f3; }
         rows.forEach(function(r){ lines.push([r.timeDisplay,r.name,r.school,r.grade,r.phone4,r.round,r.score,(r.pct===null?'':r.pct+'%'),r.details].map(q).join(',')); });
         return '﻿' + lines.join('\r\n');   // BOM: 엑셀 한글 깨짐 방지
     }
+    /* 상세를 원본(수파베이스)에서 id 묶음으로 채운다 (2026-08-26 원본 전환 — CSV용).
+     * 옛 방식(시트 전체 조회)은 원본 화면(_id) 폴백·실패 시에만 쓴다. */
+    function sbFillDetails(rows){
+        var by = {}; rows.forEach(function(r){ by[r._id] = r; });
+        var ids = rows.map(function(r){ return r._id; });
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+        return chunks.reduce(function(p, chunk){
+            return p.then(function(){
+                return fetch(SB_REST + '/voca_results?id=in.(' + chunk.join(',') + ')&select=id,details',
+                    { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } })
+                  .then(function(r){ if (!r.ok) throw new Error('sb ' + r.status); return r.json(); })
+                  .then(function(rs){ rs.forEach(function(x){
+                      var t = by[x.id];
+                      if (t){ t.details = '' + (x.details || ''); t._hasDetails = true; }
+                  }); });
+            });
+        }, Promise.resolve()).then(function(){
+            if (rows.some(function(r){ return !r._hasDetails; })) throw new Error('상세 일부 누락');
+        });
+    }
     function downloadCSV(){
         var rows = getFiltered();
-        var needFull = rows.some(function(r){ return !r._hasDetails; });
-        if (needFull){   // 목록은 lite(상세 없음) — CSV에는 상세가 들어가므로 전체를 한 번 받아온다
+        var need = rows.filter(function(r){ return !r._hasDetails; });
+        if (need.length){   // 목록은 lite(상세 없음) — CSV에는 상세가 들어가므로 채워서 다시
+            if (need.every(function(r){ return r._id; })){
+                showStatus('loading', '상세를 불러오는 중…');
+                sbFillDetails(need).then(function(){ $('status').style.display = 'none'; downloadCSV(); },
+                    function(e){ console.warn('원본 상세 조회 실패 — 옛 전체 조회로', e);
+                                 loadData({ full: true, done: downloadCSV }); });
+                return;
+            }
             loadData({ full: true, done: downloadCSV });
             return;
         }
