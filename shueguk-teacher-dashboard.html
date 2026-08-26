@@ -678,17 +678,31 @@ tr.sel-on > td { background: #eef9f3; }
     function pnorm(x){ return String(x == null ? '' : x).replace(/\s+/g, ''); }
 
     function loadPartRoster(){
-        fetch(ROSTER_API + '?action=roster&t=' + Date.now(), { cache:'no-store' })
-            .then(function(r){ return r.json(); })
-            .then(function(d){
-                if (!d || d.result !== 'success') return;
-                PART_ROSTER = {};
-                (d.students || []).forEach(function(s){
-                    var g = normGrade(s.grade); if (!g) return;
-                    (PART_ROSTER[g] = PART_ROSTER[g] || []).push({ name: s.name, school: s.school });
-                });
-                renderParticipation();
-            }).catch(function(){});
+        /* 재원 명단은 원본(students 표)에서 (2026-08-26) — 실패하면 옛 백엔드 폴백 */
+        function fillRoster(students){
+            PART_ROSTER = {};
+            (students || []).forEach(function(s){
+                var g = normGrade(s.grade); if (!g) return;
+                (PART_ROSTER[g] = PART_ROSTER[g] || []).push({ name: s.name, school: s.school });
+            });
+            renderParticipation();
+        }
+        fetch(SB_REST + '/students?select=name,school,grade,enrolled&order=seq&limit=2000',
+              { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }, cache: 'no-store' })
+            .then(function(r){ if (!r.ok) throw new Error('sb ' + r.status); return r.json(); })
+            .then(function(rows){
+                fillRoster(rows.filter(function(s){
+                    return String(s.name || '').trim() &&
+                           !/^(퇴원|n|no|off|x|중단|비재원)$/i.test(String(s.enrolled || '').trim());
+                }));
+            })
+            .catch(function(e){
+                console.warn('원본 명단 조회 실패 — 기존 백엔드로 폴백', e);
+                fetch(ROSTER_API + '?action=roster&t=' + Date.now(), { cache:'no-store' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(d){ if (d && d.result === 'success') fillRoster(d.students); })
+                    .catch(function(){});
+            });
     }
 
     function renderParticipation(){
