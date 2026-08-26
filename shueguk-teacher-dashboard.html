@@ -282,8 +282,10 @@ tr.sel-on > td { background: #eef9f3; }
         grab(0, 4).then(function(){
             if (SHEET_READY || !out.length) return;   // 시트가 이미 왔으면 원본이 우선
             ALL = withKeys(out.map(function(r){
-                return normalizeRow({ time: r.ts, name: r.name, school: r.school, grade: r.grade,
-                                      phone4: r.phone4, round: r.round, score: r.score, details: '' });
+                var row = normalizeRow({ time: r.ts, name: r.name, school: r.school, grade: r.grade,
+                                         phone4: r.phone4, round: r.round, score: r.score, details: '' });
+                row._id = r.id;   // 시트 사본에 없는 줄의 상세를 원본에서 바로 읽기 위한 열쇠
+                return row;
             }));
             buildFilters(); applyFilters();
             renderParticipation();
@@ -318,12 +320,16 @@ tr.sel-on > td { background: #eef9f3; }
             var sheetRows = withKeys((resp.rows || []).map(normalizeRow));
             if (opts.full) sheetRows.forEach(function(r){ r._hasDetails = true; });
             SHEET_READY = true;
-            if (!opts.full && attachToFast(sheetRows)){
-                // 미러로 그려 둔 화면과 내용이 같다 — 행번호·해시만 붙이고 다시 그리지 않는다
-                unlockChecks();
-                showDiff(0);
-                if (opts.done) opts.done();
-                return;
+            if (!opts.full){
+                var at = attachToFast(sheetRows);
+                if (at){
+                    // 원본(수파베이스)으로 그려 둔 화면을 유지한다 — 시트 사본은 삭제용
+                    // 행번호·해시만 제공(짝이 맞는 줄에 붙임). 사본에 없는 줄은 삭제 잠금.
+                    unlockChecks();
+                    showDiff(at.dbOnly + at.sheetOnly);
+                    if (opts.done) opts.done();
+                    return;
+                }
             }
             ALL = sheetRows;
             pruneSelection();
@@ -339,20 +345,23 @@ tr.sel-on > td { background: #eef9f3; }
         function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } var el = $(cb + '_s'); if (el) el.remove(); }
     }
 
-    /* 미러로 그려 둔 줄에 시트의 행번호·해시를 붙인다.
-     * 전부 짝이 맞으면 true (다시 그릴 필요 없음), 하나라도 어긋나면 false. */
+    /* 원본(수파베이스)으로 그려 둔 줄에 시트 사본의 행번호·해시를 붙인다 (삭제용).
+     * 2026-08-26 원본 전환 뒤로는 어긋나도 화면을 사본 쪽으로 다시 그리지 않는다 —
+     * 짝이 맞는 줄에만 붙이고, 몇 건 다른지 세어 돌려준다. 원본 화면이 아직 없으면 false. */
     function attachToFast(sheetRows){
-        if (!ALL.length) return false;                 // 미러가 아직 안 왔을 뿐 — 어긋난 게 아니다
-        if (ALL.length !== sheetRows.length) { showDiff(sheetRows.length - ALL.length); return false; }
+        if (!ALL.length) return false;                 // 원본이 아직 안 왔을 뿐 — 시트로 그린다
         var by = {};
         sheetRows.forEach(function(r){ (by[r._key] = by[r._key] || []).push(r); });
+        var dbOnly = 0;
         for (var i = 0; i < ALL.length; i++){
             var m = by[ALL[i]._key];
-            if (!m || !m.length) { showDiff(null); return false; }
+            if (!m || !m.length) { dbOnly++; continue; }
             var sr = m.shift();
             ALL[i]._row = sr._row; ALL[i]._sig = sr._sig;
         }
-        return true;
+        var sheetOnly = 0;
+        Object.keys(by).forEach(function(k){ sheetOnly += by[k].length; });
+        return { dbOnly: dbOnly, sheetOnly: sheetOnly };
     }
 
     /* 시트가 도착하기 전 잠가 둔 체크박스를 푼다 (다시 그리지 않고 그 자리에서) */
@@ -368,19 +377,31 @@ tr.sel-on > td { background: #eef9f3; }
         var n = $('sync-note'); if (n) n.style.display = 'none';
     }
 
-    /* 미러와 시트가 어긋나면 알려 준다 (0이면 표시를 지운다) */
+    /* 원본과 시트 사본이 어긋나면 알려 준다 (0이면 표시를 지운다) */
     function showDiff(n){
         var el = $('sync-note'); if (!el) return;
         if (!n){ el.style.display = 'none'; return; }
         el.style.display = '';
         el.className = 'sync-note warn';
         el.textContent = typeof n === 'number'
-            ? '미러와 원본(시트)이 ' + Math.abs(n) + '건 달라 원본 기준으로 다시 불러왔어요.'
-            : '미러와 원본(시트)이 달라 원본 기준으로 다시 불러왔어요.';
+            ? '원본(수파베이스)과 시트 사본이 ' + Math.abs(n) + '건 달라요 — 사본에 없는 줄은 삭제가 잠겨요. 일일 점검이 보고합니다.'
+            : '원본(수파베이스)과 시트 사본이 달라요 — 사본에 없는 줄은 삭제가 잠겨요.';
     }
 
-    /* ===== 행별 상세 조회 (JSONP, action=detail) — 목록은 lite라 상세가 없음 ===== */
+    /* ===== 행별 상세 조회 (JSONP, action=detail) — 목록은 lite라 상세가 없음 =====
+     * 시트 사본에 없는 줄(_row 없음)은 원본(수파베이스)에서 id로 바로 읽는다. */
     function fetchDetail(r, done){
+        if (!r._row && r._id){
+            fetch(SB_REST + '/voca_results?id=eq.' + r._id + '&select=details',
+                  { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } })
+                .then(function(res){ if (!res.ok) throw new Error('sb ' + res.status); return res.json(); })
+                .then(function(rows){
+                    if (rows && rows.length){ r.details = '' + (rows[0].details || ''); r._hasDetails = true; done(); }
+                    else { r.details = '(상세를 불러오지 못했어요)'; done(); r.details = ''; }
+                })
+                .catch(function(){ r.details = '(상세를 불러오지 못했어요 — 다시 눌러 주세요)'; done(); r.details = ''; });
+            return;
+        }
         var cb = 'shueguk_dt_' + r._row + '_' + Date.now();
         var fin = false;
         var timer = setTimeout(function(){ if (!fin){ fin = true; cleanup(); r.details = '(상세를 불러오지 못했어요 — 다시 눌러 주세요)'; done(); r.details = ''; } }, 12000);
