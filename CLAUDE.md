@@ -126,3 +126,6 @@
 
 참여한 모든 어휘 사냥꾼들, 수고 많았어요!
 다음 어휘 테스트도 기대해 주세요 📔
+
+## GPT-6 Astra(Codex) PR 검토 (2026-09-25)
+루트 `AGENTS.md`는 OpenAI Codex가 PR을 검토할 때 읽는 규칙 파일이다(사용자 결정 — 리포트 저장소 CLAUDE.md 'GPT-6 Astra(Codex) PR 검토 참여' 절 참고). 이 CLAUDE.md에 새 규칙이 생기면 AGENTS.md에도 검토용 한 줄을 더할 것.
