@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script src="https://coke4497-sys.github.io/shueguk-hub/assets/teacher-gate.js"></script><!-- 교사 로그인 게이트 (허브 로그인 필요, 2026-10-12) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHUEGUK 어휘 · 종합 문제 출제</title>
+<title>SHUEGUK 어휘 · 시험지·학습지 출제</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,6 +44,13 @@ input[type=number] { width: 72px; }
 .hw-links.show { display: flex; }
 .hw-links a { font-size: 12px; font-weight: 800; color: #3A544E; text-decoration: none; background: #E9F0EF; border: 2px solid #A6C1BB; border-radius: 10px; padding: 8px 14px; }
 .hw-links a svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* 만들 것 고르기 (2026-10-21) */
+.kind-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.kind { font-family: inherit; text-align: left; flex: 1 1 180px; background: #F4F5F3; color: #3A544E; border: 2px solid #E8EAE7; border-radius: 12px; padding: 10px 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.kind b { display: block; font-size: 13px; font-weight: 800; }
+.kind small { display: block; font-size: 11px; color: #6A716C; margin-top: 2px; line-height: 1.45; }
+.kind.on { background: #E9F0EF; border-color: #628C83; }
+.kind.on b { color: #2C2F2D; }
 /* 최근 만든 시험 */
 .hist { border-top: 1.5px dashed #C6D5D2; margin-top: 12px; padding-top: 12px; }
 .hist-title { font-size: 13px; font-weight: 800; color: #3A544E; margin-bottom: 8px; }
@@ -92,6 +99,20 @@ input[type=number] { width: 72px; }
 .q .oxsel { display: inline-block; margin-top: 1.5mm; font-size: 11px; letter-spacing: 1px; color: #3A544E; }
 .q .oxsel span { display: inline-block; border: 1.3px solid #A6C1BB; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; text-align: center; font-weight: 800; margin-right: 8px; }
 
+/* ── 주차마다 한 장 (주차별 시험지·개념 정리) ── */
+.wk-page + .wk-page { border-top: 3px double #C6D5D2; margin-top: 10mm; padding-top: 8mm; }
+.ans-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 6mm; }
+.ans-block .ans-title { font-size: 13px; }
+.st-cat { font-size: 12px; font-weight: 800; color: #2C2F2D; background: #F1F6F4; border: 1.2px solid #A6C1BB; border-radius: 4px; padding: 5px 9px; margin: 2mm 0 3mm; }
+.st-cat span { font-weight: 400; color: #6A716C; font-size: 10.5px; margin-left: 4px; }
+.st-list { column-count: 2; column-gap: 9mm; column-rule: 1px solid #C6D5D2; margin-bottom: 3mm; }
+.st-e { break-inside: avoid-column; page-break-inside: avoid; font-size: 10.5px; line-height: 1.6; margin-bottom: 3mm; }
+.st-w { font-family: 'Nanum Myeongjo', serif; font-size: 12.5px; font-weight: 800; color: #2C2F2D; }
+.st-w .st-h { font-family: 'Gowun Dodum', sans-serif; font-size: 10px; font-weight: 400; color: #6A716C; margin-left: 5px; }
+.st-m { margin-top: 0.5mm; }
+.st-x { color: #4E534F; margin-top: 0.8mm; padding-left: 8px; }
+.st-x b { font-weight: 800; margin-right: 3px; }
+
 /* ── 정답지 ── */
 .answer-sheet { page-break-before: always; border-top: 3px double #C6D5D2; margin-top: 10mm; padding-top: 8mm; }
 .ans-title { font-family: 'Nanum Myeongjo', serif; font-size: 15px; font-weight: 800; border: 2px solid #2C2F2D; padding: 7px 12px; margin-bottom: 4mm; text-align: center; }
@@ -112,6 +133,8 @@ input[type=number] { width: 72px; }
   /* 정답지만 인쇄 */
   body.print-a .paper-head, body.print-a .range-note, body.print-a .qwrap { display: none !important; }
   body.print-a .answer-sheet { page-break-before: auto; }
+  body.print-a .wk-page { display: none !important; }
+  .wk-page + .wk-page { border-top: none; margin-top: 0; padding-top: 0; page-break-before: always; }
   @page {
     size: A4;
     margin: 13mm 11mm 17mm;
@@ -132,8 +155,13 @@ input[type=number] { width: 72px; }
 
 <div class="toolbar">
   <div class="tool-card">
-    <h1>슈국 어휘 · 종합 문제 출제</h1>
-    <div class="desc">학년·주차 범위·문항 수를 고른 뒤 [테스트지 만들기]를 누르세요. 아래에서 미리 확인한 뒤 문제지와 정답지를 각각 내려받을 수 있습니다.</div>
+    <h1>슈국 어휘 · 시험지·학습지 출제</h1>
+    <div class="desc" id="kindDesc"></div>
+    <div class="kind-row" id="kindRow">
+      <button type="button" class="kind on" data-kind="mix"><b>종합 시험지</b><small>여러 주차를 섞어 시험 한 장으로 만듭니다.</small></button>
+      <button type="button" class="kind" data-kind="weekly"><b>주차별 시험지</b><small>온라인 테스트와 같은 문항으로 주차마다 한 장씩 만듭니다.</small></button>
+      <button type="button" class="kind" data-kind="study"><b>개념 정리</b><small>어휘·뜻·예문 학습지를 주차마다 한 장씩 만듭니다.</small></button>
+    </div>
     <div class="tool-row">
       <label class="fld">학년
         <select id="selGrade">
@@ -141,10 +169,10 @@ input[type=number] { width: 72px; }
           <option value="h1" selected>고1</option><option value="h2">고2</option><option value="h3">고3</option>
         </select>
       </label>
-      <label class="fld">주차 범위
+      <label class="fld"><span id="lblRange">주차 범위</span>
         <select id="selFrom"></select> ~ <select id="selTo"></select>
       </label>
-      <label class="fld">문항 구성
+      <label class="fld" id="fldMode">문항 구성
         <select id="selMode">
           <option value="all">전체 문항</option>
           <option value="sample">문항 수 지정 (랜덤·주차별 균등)</option>
@@ -156,18 +184,19 @@ input[type=number] { width: 72px; }
       <label class="fld" id="fldSeed" style="display:none;">출제 번호
         <input type="number" id="inpSeed" value="1" min="1" max="9999">
       </label>
-      <label class="fld" title="주차별 학습 어휘에서 뜻을 제시하는 단답 문항을 만들어 시험지 끝에 추가합니다.">보기 없는 단답
+      <label class="fld" id="fldExtra" title="주차별 학습 어휘에서 뜻을 제시하는 단답 문항을 만들어 시험지 끝에 추가합니다.">보기 없는 단답
         <input type="number" id="inpExtra" value="10" min="0" max="60" step="1"> 문항 추가
       </label>
     </div>
     <div class="tool-row">
       <label class="chk" id="fldCho"><input type="checkbox" id="chkCho" checked> 보기 없는 단답에 초성 힌트</label>
-      <label class="chk"><input type="checkbox" id="chkExpl"> 정답지에 해설 포함</label>
+      <label class="chk" id="fldExpl"><input type="checkbox" id="chkExpl"> 정답지에 해설 포함</label>
       <button class="btn btn-primary" id="btnBuild">테스트지 만들기</button>
     </div>
     <div class="dl-row" id="dlRow">
       <button class="btn btn-ghost" id="btnDlQ"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>문제지 다운로드</button>
       <button class="btn btn-ghost" id="btnDlA"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 14.5l2 2 4-4.5"/></svg>정답지 다운로드</button>
+      <button class="btn btn-ghost" id="btnDlS" style="display:none;"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>개념 정리 다운로드</button>
       <span class="dl-hint">버튼을 누르면 인쇄 창이 열립니다. 대상(프린터)을 "PDF로 저장"으로 바꾸면 파일로 저장되고, 프린터를 고르면 종이로 인쇄됩니다.</span>
     </div>
     <div class="hw-panel" id="hwPanel">
@@ -185,7 +214,7 @@ input[type=number] { width: 72px; }
         <a href="https://coke4497-sys.github.io/shueguk-h-work/hwork_assign.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>학생 배정·현황</a>
       </div>
     </div>
-    <div class="status" id="status">조건을 고른 뒤 [테스트지 만들기]를 누르세요.</div>
+    <div class="status" id="status"></div>
     <div class="hist" id="hist" style="display:none;">
       <div class="hist-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>최근 만든 시험 <span class="hist-note">— 눌러서 같은 시험지를 다시 열고 PDF를 내려받을 수 있어요 (이 기기에 저장됨)</span></div>
       <div id="histList"></div>
@@ -283,7 +312,19 @@ input[type=number] { width: 72px; }
 
   var $ = function (id) { return document.getElementById(id); };
   var cache = {};
-  var built = null;   // { grade, from, to } — 다운로드 파일 이름에 사용
+  var built = null;   // { grade, from, to, kind } — 다운로드 파일 이름에 사용
+  /* 만들 것 (2026-10-21 원장님): mix = 종합 시험지(옛 기능) · weekly = 주차별 시험지(온라인 테스트와 같은 문항, 주차마다 한 장)
+     · study = 개념 정리 학습지(주차마다 한 장). 여러 주차를 고르면 PDF 하나에 주차마다 페이지를 나눠 담는다. */
+  var kind = 'mix';
+  var KIND = {
+    mix: { label: '종합 시험지', btn: '테스트지 만들기', file: '종합',
+      desc: '학년·주차 범위·문항 수를 고른 뒤 [테스트지 만들기]를 누르세요. 아래에서 미리 확인한 뒤 문제지와 정답지를 각각 내려받을 수 있습니다.' },
+    weekly: { label: '주차별 시험지', btn: '주차별 시험지 만들기', file: '주차별',
+      desc: '학년과 주차를 고르세요. 학생이 온라인으로 푸는 그 주차 문항이 그대로 들어가고, 여러 주차를 고르면 주차마다 한 장씩 나뉩니다. 한 주차만 인쇄하려면 앞뒤를 같은 주차로 맞추세요.' },
+    study: { label: '개념 정리', btn: '개념 정리 만들기', file: '개념정리',
+      desc: '학년과 주차를 고르세요. 그 주차의 필수 어휘·필수 개념·한자성어를 뜻·예문과 함께 학습지로 만들고, 여러 주차를 고르면 주차마다 한 장씩 나뉩니다.' }
+  };
+  var STUDY_DEFS = [['vocab', '필수 어휘'], ['concept', '필수 개념'], ['idiom', '한자성어']];
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
@@ -536,7 +577,171 @@ input[type=number] { width: 72px; }
     return sections;
   }
 
+  /* 시험지 머리 (이름·날짜·점수 칸) — 종합·주차별 공용 */
+  function paperHead(grade, title, num) {
+    return '<div class="paper-head">' +
+        '<div class="brand-row"><div class="brand">S H U E G U K</div>' +
+        '<div class="title">' + esc(title) + '</div>' +
+        '<div class="grade-chip">' + GRADE_LABEL[grade] + '</div></div>' +
+        '<div class="info-row">' +
+          '<div class="info-cell"><b>이름</b><span class="write"></span></div>' +
+          '<div class="info-cell"><b>날짜</b><span class="write"></span></div>' +
+          '<div class="info-cell"><b>점수</b><span class="write"></span>/ ' + num + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+  /* 문항 묶음 → 시험지 본문 HTML (번호는 numRef.n 에서 이어 매김, flat 에 정답용 기록) */
+  function sectionsHtml(weekSections, numRef, flat) {
+    var qHtml = '';
+    weekSections.forEach(function (sections) {
+      sections.forEach(function (sec) {
+        var start = numRef.n + 1;
+        var body = sec.questions.map(function (q) {
+          numRef.n++;
+          flat.push({ num: numRef.n, q: q, week: sec.week });
+          return renderQuestion(q, numRef.n, sec.text);
+        }).join('');
+        var range = start === numRef.n ? String(start).padStart(2, '0')
+          : String(start).padStart(2, '0') + '~' + String(numRef.n).padStart(2, '0');
+        qHtml += '<div class="section-block"><div class="section-head"><span class="wk">' + sec.week + '주차</span>'
+          + range + ' ' + esc(sec.text) + '</div>'
+          + (sec.boxki ? '<div class="p-boxki"><b>&lt;보기&gt;</b>' + sec.boxki.map(esc).join(' &nbsp;/&nbsp; ') + '</div>' : '')
+          + body + '</div>';
+      });
+    });
+    return qHtml;
+  }
+  function answerTable(flat) {
+    var cols = 8, rows = '';
+    for (var i = 0; i < flat.length; i += cols) {
+      var slice = flat.slice(i, i + cols);
+      rows += '<tr>' + slice.map(function (f) { return '<td class="no">' + f.num + '</td>'; }).join('') + '</tr>';
+      rows += '<tr>' + slice.map(function (f) { return '<td>' + answerText(f.q) + '</td>'; }).join('') + '</tr>';
+    }
+    return '<table class="ans-grid">' + rows + '</table>';
+  }
+  function explHtml(flat) {
+    var expl = flat.filter(function (f) { return f.q.explanation; });
+    if (!expl.length) return '';
+    return '<div class="ans-title" style="font-size:13px;">해설</div><div class="expl-list">' +
+      expl.map(function (f) {
+        return '<div class="e"><b>' + f.num + '.</b> ' + esc(f.q.explanation) + '</div>';
+      }).join('') + '</div>';
+  }
+
+  /* 주차 범위의 데이터를 불러와 [있는 주차들, 빠진 주차들]로 */
+  function loadRange(grade, weeks) {
+    return Promise.all(weeks.map(function (w) { return loadWeek(grade, w); }))
+      .then(function (loaded) {
+        var have = [], missing = [];
+        loaded.forEach(function (d, i) { if (d) have.push(d); else missing.push(weeks[i]); });
+        return { have: have, missing: missing };
+      });
+  }
+
+  /* 결과를 화면에 놓고 다운로드 버튼을 그 종류에 맞춘다 */
+  function showSheet(html) {
+    $('sheet').innerHTML = html;
+    $('sheet').style.display = 'block';
+    $('dlRow').className = 'dl-row show';
+    var st = built && built.kind === 'study';
+    $('btnDlQ').style.display = st ? 'none' : '';
+    $('btnDlA').style.display = st ? 'none' : '';
+    $('btnDlS').style.display = st ? '' : 'none';
+    $('hwPanel').className = 'hw-panel' + (built && built.kind === 'mix' ? ' show' : '');
+  }
+
+  /* ── 주차별 시험지 — 주차마다 한 장, 번호는 주차마다 1번부터, 정답지는 뒤에 주차별로 ── */
+  function buildWeekly(grade, weeks, withExpl) {
+    return loadRange(grade, weeks).then(function (r) {
+      if (!r.have.length) throw new Error('선택한 범위에 등록된 문제가 없습니다.');
+      var pages = '', answers = '', total = 0;
+      r.have.forEach(function (d) {
+        var flat = [], numRef = { n: 0 };
+        var body = sectionsHtml([toSections(d)], numRef, flat);
+        var title = '어휘 ' + d.week + '주차 테스트';
+        total += numRef.n;
+        pages += '<div class="wk-page">' + paperHead(grade, title, numRef.n) +
+          '<div class="range-note"><b>출제 범위</b> ' + d.week + '주차 ' + esc(d.title) +
+          ' &nbsp;·&nbsp; 총 ' + numRef.n + '문항</div>' +
+          '<div class="qwrap">' + body + '</div></div>';
+        answers += '<div class="ans-block"><div class="ans-title">정답지 · ' + GRADE_LABEL[grade] + ' ' + title +
+          ' · ' + esc(d.title) + '</div>' + answerTable(flat) + (withExpl ? explHtml(flat) : '') + '</div>';
+      });
+      var from = weeks[0], to = weeks[weeks.length - 1];
+      built = { grade: grade, from: from, to: to, kind: 'weekly' };
+      built.histRec = histAdd({
+        k: 'weekly', g: grade, f: from, t: to, expl: withExpl, qn: total, wn: r.have.length, at: Date.now(),
+        title: GRADE_LABEL[grade] + ' 어휘 ' + rangeLabel(from, to) + ' 주차별 시험지'
+      });
+      showSheet(pages + '<div class="answer-sheet">' + answers + '</div>');
+      return GRADE_LABEL[grade] + ' · ' + rangeLabel(from, to) + ' · 시험지 ' + r.have.length + '장(총 ' + total + '문항) 준비 완료.' +
+        (r.missing.length ? ' (미등록 주차 제외: ' + r.missing.join(', ') + '주)' : '') +
+        ' 아래에서 확인 후 문제지/정답지를 내려받으세요.';
+    });
+  }
+
+  /* ── 개념 정리 학습지 — 주차마다 한 장 (필수 어휘·필수 개념·한자성어, 학생 학습 모드와 같은 순서) ── */
+  function buildStudy(grade, weeks) {
+    return loadRange(grade, weeks).then(function (r) {
+      var have = r.have.filter(function (d) {
+        return STUDY_DEFS.some(function (c) { return d.study && d.study[c[0]] && d.study[c[0]].length; });
+      });
+      if (!have.length) throw new Error('선택한 범위에 등록된 개념 정리가 없습니다.');
+      var pages = '', words = 0;
+      have.forEach(function (d) {
+        var body = '';
+        STUDY_DEFS.forEach(function (c) {
+          var list = (d.study && d.study[c[0]]) || [];
+          if (!list.length) return;
+          words += list.length;
+          body += '<div class="st-cat">' + c[1] + '<span>' + list.length + '개</span></div><div class="st-list">' +
+            list.map(function (e) {
+              return '<div class="st-e"><div class="st-w">' + esc(e.word) +
+                (e.hanja ? '<span class="st-h">' + esc(e.hanja) + '</span>' : '') + '</div>' +
+                '<div class="st-m">' + esc(e.meaning) + '</div>' +
+                (e.example ? '<div class="st-x"><b>예)</b>' + esc(e.example) + '</div>' : '') + '</div>';
+            }).join('') + '</div>';
+        });
+        pages += '<div class="wk-page"><div class="paper-head">' +
+            '<div class="brand-row"><div class="brand">S H U E G U K</div>' +
+            '<div class="title">어휘 ' + d.week + '주차 개념 정리</div>' +
+            '<div class="grade-chip">' + GRADE_LABEL[grade] + '</div></div>' +
+            '<div class="info-row">' +
+              '<div class="info-cell"><b>주제</b> ' + esc(d.title) + '</div>' +
+              '<div class="info-cell"><b>이름</b><span class="write"></span></div>' +
+            '</div>' +
+          '</div>' + body + '</div>';
+      });
+      var from = weeks[0], to = weeks[weeks.length - 1];
+      built = { grade: grade, from: from, to: to, kind: 'study' };
+      built.histRec = histAdd({
+        k: 'study', g: grade, f: from, t: to, qn: words, wn: have.length, at: Date.now(),
+        title: GRADE_LABEL[grade] + ' 어휘 ' + rangeLabel(from, to) + ' 개념 정리'
+      });
+      showSheet(pages);
+      var skipped = r.missing.concat(r.have.filter(function (d) { return have.indexOf(d) < 0; }).map(function (d) { return d.week; }));
+      return GRADE_LABEL[grade] + ' · ' + rangeLabel(from, to) + ' · 학습지 ' + have.length + '장(어휘 ' + words + '개) 준비 완료.' +
+        (skipped.length ? ' (자료 없는 주차 제외: ' + skipped.join(', ') + '주)' : '') +
+        ' 아래에서 확인 후 [개념 정리 다운로드]를 누르세요.';
+    });
+  }
+
   function build() {
+    if (kind !== 'mix') {
+      var g = $('selGrade').value, ws = weekRange();
+      $('status').className = 'status';
+      $('status').textContent = '자료를 불러오는 중… (' + rangeLabel(ws[0], ws[ws.length - 1]) + ')';
+      $('btnBuild').disabled = true;
+      (kind === 'weekly' ? buildWeekly(g, ws, $('chkExpl').checked) : buildStudy(g, ws))
+        .then(function (msg) { $('status').textContent = msg; })
+        .catch(function (e) {
+          $('status').className = 'status err';
+          $('status').textContent = '오류: ' + e.message;
+        })
+        .then(function () { $('btnBuild').disabled = false; });
+      return;
+    }
     var grade = $('selGrade').value;
     var weeks = weekRange();
     var from = weeks[0], to = weeks[weeks.length - 1];
@@ -582,39 +787,14 @@ input[type=number] { width: 72px; }
           if (extraSections.length) weekSections.push(extraSections);
         }
 
-        var num = 0;
         var flat = [];
-        var qHtml = '';
-        weekSections.forEach(function (sections) {
-          sections.forEach(function (sec) {
-            var start = num + 1;
-            var body = sec.questions.map(function (q) {
-              num++;
-              flat.push({ num: num, q: q, week: sec.week });
-              return renderQuestion(q, num, sec.text);
-            }).join('');
-            var range = start === num ? String(start).padStart(2, '0')
-              : String(start).padStart(2, '0') + '~' + String(num).padStart(2, '0');
-            qHtml += '<div class="section-block"><div class="section-head"><span class="wk">' + sec.week + '주차</span>'
-              + range + ' ' + esc(sec.text) + '</div>'
-              + (sec.boxki ? '<div class="p-boxki"><b>&lt;보기&gt;</b>' + sec.boxki.map(esc).join(' &nbsp;/&nbsp; ') + '</div>' : '')
-              + body + '</div>';
-          });
-        });
+        var numRef = { n: 0 };
+        var qHtml = sectionsHtml(weekSections, numRef, flat);
+        var num = numRef.n;
 
         var titles = weekDatas.map(function (w) { return w.week + '주차 ' + w.title; }).join(' · ');
         var paperTitle = '어휘 ' + rangeLabel(from, to) + ' 종합 테스트';
-        var head =
-          '<div class="paper-head">' +
-            '<div class="brand-row"><div class="brand">S H U E G U K</div>' +
-            '<div class="title">' + paperTitle + '</div>' +
-            '<div class="grade-chip">' + GRADE_LABEL[grade] + '</div></div>' +
-            '<div class="info-row">' +
-              '<div class="info-cell"><b>이름</b><span class="write"></span></div>' +
-              '<div class="info-cell"><b>날짜</b><span class="write"></span></div>' +
-              '<div class="info-cell"><b>점수</b><span class="write"></span>/ ' + num + '</div>' +
-            '</div>' +
-          '</div>' +
+        var head = paperHead(grade, paperTitle, num) +
           '<div class="range-note"><b>출제 범위</b> ' + esc(titles) +
           ' &nbsp;·&nbsp; 총 ' + num + '문항' +
           (extraCount ? ' (보기 없는 단답 ' + extraCount + '문항 포함)' : '') +
@@ -625,38 +805,18 @@ input[type=number] { width: 72px; }
         var html = head + '<div class="qwrap">' + qHtml + '</div>';
 
         /* 정답지 (항상 생성 — 인쇄 버튼으로 문제지/정답지를 나눠 출력) */
-        var cols = 8;
-        var rows = '';
-        for (var i = 0; i < flat.length; i += cols) {
-          var slice = flat.slice(i, i + cols);
-          rows += '<tr>' + slice.map(function (f) { return '<td class="no">' + f.num + '</td>'; }).join('') + '</tr>';
-          rows += '<tr>' + slice.map(function (f) { return '<td>' + answerText(f.q) + '</td>'; }).join('') + '</tr>';
-        }
         html += '<div class="answer-sheet">' +
           '<div class="ans-title">정답지 · ' + GRADE_LABEL[grade] + ' ' + paperTitle +
           (mode === 'sample' ? ' (출제 번호 ' + seed + ')' : '') + '</div>' +
-          '<table class="ans-grid">' + rows + '</table>';
-        if (withExpl) {
-          var expl = flat.filter(function (f) { return f.q.explanation; });
-          if (expl.length) {
-            html += '<div class="ans-title" style="font-size:13px;">해설</div><div class="expl-list">' +
-              expl.map(function (f) {
-                return '<div class="e"><b>' + f.num + '.</b> ' + esc(f.q.explanation) + '</div>';
-              }).join('') + '</div>';
-          }
-        }
-        html += '</div>';
+          answerTable(flat) + (withExpl ? explHtml(flat) : '') + '</div>';
 
-        built = { grade: grade, from: from, to: to, mode: mode, seed: seed, flat: flat };
+        built = { grade: grade, from: from, to: to, mode: mode, seed: seed, flat: flat, kind: 'mix' };
         built.histRec = histAdd({
-          g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed, x: extra, cho: withCho ? 1 : 0,
+          k: 'mix', g: grade, f: from, t: to, mode: mode, cnt: total, seed: seed, x: extra, cho: withCho ? 1 : 0,
           expl: withExpl, qn: num, at: Date.now(),
           title: GRADE_LABEL[grade] + ' ' + paperTitle
         });
-        $('sheet').innerHTML = html;
-        $('sheet').style.display = 'block';
-        $('dlRow').className = 'dl-row show';
-        $('hwPanel').className = 'hw-panel show';
+        showSheet(html);
         $('hwLinks').className = 'hw-links';
         $('hwStatus').textContent = '';
         if (!$('hwTeacher').value) {
@@ -681,7 +841,8 @@ input[type=number] { width: 72px; }
   function printPart(cls, suffix) {
     if (!built) return;
     var oldTitle = document.title;
-    document.title = '슈국어휘_' + GRADE_LABEL[built.grade] + '_' + rangeLabel(built.from, built.to) + '_' + suffix;
+    document.title = '슈국어휘_' + GRADE_LABEL[built.grade] + '_' + rangeLabel(built.from, built.to) + '_' +
+      (built.kind === 'study' ? '' : KIND[built.kind || 'mix'].file + '_') + suffix;
     document.body.classList.add(cls);
     var restore = function () {
       document.body.classList.remove(cls);
@@ -704,7 +865,7 @@ input[type=number] { width: 72px; }
   function histStore(list) {
     try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 15))); } catch (e) {}
   }
-  function histId(r) { return [r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.seed || 1, r.x || 0, r.cho == null ? 1 : r.cho].join('|'); }
+  function histId(r) { return [r.k || 'mix', r.g, r.f, r.t, r.mode, r.mode === 'sample' ? r.cnt : '', r.seed || 1, r.x || 0, r.cho == null ? 1 : r.cho].join('|'); }
   function histAdd(rec) {
     var list = histLoad().filter(function (r) { return histId(r) !== histId(rec); });
     /* 같은 조건 재생성 시 기존 기록의 H WORK 표시는 유지 */
@@ -738,7 +899,9 @@ input[type=number] { width: 72px; }
     if (!list.length) { box.style.display = 'none'; return; }
     box.style.display = 'block';
     $('histList').innerHTML = list.map(function (r, i) {
-      var meta = r.qn + '문항 · ' + (r.mode === 'sample' ? '랜덤(출제 ' + r.seed + ')' : '전체') + ' · ' + fmtDate(r.at);
+      var meta = r.k === 'study' ? '학습지 ' + r.wn + '장 · 어휘 ' + r.qn + '개 · ' + fmtDate(r.at)
+        : r.k === 'weekly' ? '시험지 ' + r.wn + '장 · 총 ' + r.qn + '문항 · ' + fmtDate(r.at)
+        : r.qn + '문항 · ' + (r.mode === 'sample' ? '랜덤(출제 ' + r.seed + ')' : '전체') + ' · ' + fmtDate(r.at);
       return '<div class="hist-item">' +
         '<span class="h-name" data-i="' + i + '">' + esc(r.title) + '</span>' +
         '<span class="h-meta">' + esc(meta) + '</span>' +
@@ -756,11 +919,12 @@ input[type=number] { width: 72px; }
   }
   function histRestore(r) {
     if (!r) return;
+    setKind(r.k || 'mix');
     $('selGrade').value = r.g;
     fillWeekSelects();
     $('selFrom').value = String(r.f);
     $('selTo').value = String(r.t);
-    $('selMode').value = r.mode;
+    if (r.mode) $('selMode').value = r.mode;
     if (r.mode === 'sample') { $('inpCount').value = r.cnt; }
     $('inpSeed').value = r.seed || 1;
     $('inpExtra').value = r.x != null ? r.x : 0;
@@ -862,23 +1026,53 @@ input[type=number] { width: 72px; }
 
   $('selGrade').addEventListener('change', fillWeekSelects);
   function syncFields() {
-    var s = $('selMode').value === 'sample';
-    var x = (parseInt($('inpExtra').value, 10) || 0) > 0;
+    var mix = kind === 'mix';
+    var s = mix && $('selMode').value === 'sample';
+    var x = mix && (parseInt($('inpExtra').value, 10) || 0) > 0;
+    $('fldMode').style.display = mix ? 'flex' : 'none';
+    $('fldExtra').style.display = mix ? 'flex' : 'none';
+    $('fldExpl').style.display = kind === 'study' ? 'none' : 'flex';
     $('fldCho').style.display = x ? 'flex' : 'none';
     $('fldCount').style.display = s ? 'flex' : 'none';
     /* 출제 번호는 랜덤 추출 또는 보기 없는 단답이 있을 때 의미가 있음 */
     $('fldSeed').style.display = (s || x) ? 'flex' : 'none';
+    $('lblRange').textContent = mix ? '주차 범위' : '주차';
+    $('kindDesc').textContent = KIND[kind].desc;
+    $('btnBuild').textContent = KIND[kind].btn;
   }
+  function setKind(k) {
+    if (!KIND[k]) k = 'mix';
+    var changed = k !== kind;
+    kind = k;
+    $('kindRow').querySelectorAll('.kind').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-kind') === k);
+    });
+    if (changed) {   /* 다른 종류의 미리보기가 남아 엉뚱한 PDF가 나가지 않게 비운다 */
+      built = null;
+      $('sheet').style.display = 'none';
+      $('dlRow').className = 'dl-row';
+      $('hwPanel').className = 'hw-panel';
+      $('status').className = 'status';
+      $('status').textContent = '조건을 고른 뒤 [' + KIND[k].btn + ']를 누르세요.';
+    }
+    syncFields();
+  }
+  $('kindRow').addEventListener('click', function (ev) {
+    var b = ev.target.closest('.kind');
+    if (b) setKind(b.getAttribute('data-kind'));
+  });
   $('selMode').addEventListener('change', syncFields);
   $('inpExtra').addEventListener('input', syncFields);
   $('btnBuild').addEventListener('click', build);
   $('btnDlQ').addEventListener('click', function () { printPart('print-q', '문제지'); });
   $('btnDlA').addEventListener('click', function () { printPart('print-a', '정답지'); });
+  $('btnDlS').addEventListener('click', function () { printPart('print-s', '개념정리'); });
 
   fillWeekSelects();
   $('selFrom').value = '1';
   $('selTo').value = '4';
   syncFields();
+  $('status').textContent = '조건을 고른 뒤 [' + KIND[kind].btn + ']를 누르세요.';
   renderHist();
 })();
 </script>
