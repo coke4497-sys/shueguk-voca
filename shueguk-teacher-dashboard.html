@@ -694,7 +694,7 @@ tr.sel-on > td { background: #eef9f3; }
             .then(function(rows){
                 fillRoster(rows.filter(function(s){
                     return String(s.name || '').trim() &&
-                           !/^(퇴원|n|no|off|x|중단|비재원)$/i.test(String(s.enrolled || '').trim());
+                           !/^(퇴원|n|no|off|x|중단|비재원|졸업)$/i.test(String(s.enrolled || '').trim());
                 }));
             })
             .catch(function(e){
